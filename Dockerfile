@@ -1,4 +1,3 @@
-
 # ============================================================
 # SafetyGuard X — Dockerfile
 # HuggingFace Spaces compatible (port 7860)
