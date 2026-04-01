@@ -1,11 +1,11 @@
  
  ---
-title: SafetyGuard X
-emoji: 🛡️
-colorFrom: red
-colorTo: blue
-sdk: docker
-pinned: true
+Title: SafetyGuard X     
+emoji: 🛡️   
+colorFrom: red   
+colorTo: blue  
+sdk: docker   
+pinned: true    
 tags:
   - openenv
   - ai-safety
