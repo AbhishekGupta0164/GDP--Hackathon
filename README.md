@@ -167,9 +167,9 @@ challenge frontier models. GPT-4o scores ~0.45.
 }
 ```
 
-## Issue 4 — Is Your System Trainable?
+## Issue 4 — Is This System Trainable?
 
-**Yes — your system already satisfies this.** Here's proof:
+**Yes — My system already satisfies this.** Here's proof:
 ```
 Agent calls reset() → gets observation
 Agent calls step(action) → gets reward 0.0-1.0
