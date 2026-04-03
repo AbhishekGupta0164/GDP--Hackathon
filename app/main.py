@@ -162,6 +162,7 @@ def validate():
         "reward_range": [0.0, 1.0],
         "deterministic": True,
         "multi_turn": True,
+        "attack_types": ["direct","semantic_disguise","roleplay_jailbreak","emotional_manip","encoded"],
     }
 @app.get("/leaderboard", tags=["openenv"])
 def leaderboard():
