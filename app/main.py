@@ -50,20 +50,27 @@ class GraderRequest(BaseModel):
 
 # ── Meta Endpoints ────────────────────────────────────────────
 
+# @app.get("/", tags=["meta"])
+# def root():
+#     return {
+#         "environment": PROJECT_NAME,
+#         "version":     VERSION,
+#         "description": DESCRIPTION,
+#         "tasks":       ["easy", "medium", "hard", "expert"],
+#         "endpoints":   [
+#             "/reset", "/step", "/state",
+#             "/tasks", "/grader", "/baseline",
+#             "/health", "/ui"
+#         ],
+#     }
+
+# Fixing  the root to redirect to UI automatically
+
+from fastapi.responses import RedirectResponse
+
 @app.get("/", tags=["meta"])
 def root():
-    return {
-        "environment": PROJECT_NAME,
-        "version":     VERSION,
-        "description": DESCRIPTION,
-        "tasks":       ["easy", "medium", "hard", "expert"],
-        "endpoints":   [
-            "/reset", "/step", "/state",
-            "/tasks", "/grader", "/baseline",
-            "/health", "/ui"
-        ],
-    }
-
+    return RedirectResponse(url="/ui")
 
 @app.get("/health", tags=["meta"])
 def health():
