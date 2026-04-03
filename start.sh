@@ -1,4 +1,3 @@
-
 # ============================================================
 # SafetyGuard X — Startup Script
 # Clean startup script
@@ -6,6 +5,7 @@
 # ============================================================
 echo "Starting SafetyGuard X..."
 echo "Port: ${PORT:-7860}"
+
 
 python -m uvicorn app.main:app \
     --host 0.0.0.0 \
