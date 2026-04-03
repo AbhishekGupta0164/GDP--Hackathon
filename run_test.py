@@ -84,6 +84,7 @@ for task_id in ["easy", "medium", "hard", "expert"]:
     assert 0.0 <= sc <= 1.0
     print("    " + task_id + ": " + str(sc) + " ✓")
 
+
 # 8. Inference script
 print("\n[8] Testing inference.py...")
 import subprocess, sys
