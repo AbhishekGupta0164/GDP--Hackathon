@@ -400,7 +400,7 @@ python baseline_inference.py
 
 MIT
 
-
+```bash
 ## ==================================================   
 SafetyGuard X — Full System Test
 ==================================================    
@@ -446,7 +446,6 @@ ALL TESTS PASSED — Ready to deploy!
 ==================================================
 
 ## Deploy Done !!!! 
-
 
 ==================================================
 LOCAL TEST (localhost:7860)
@@ -525,3 +524,4 @@ https://huggingface.co/spaces/abhishek0164/safetyguard-x
 
 GITHUB URL:
 https://github.com/AbhishekGupta0164/Meta-AI-OpenEnv-SST-Project.git
+```
