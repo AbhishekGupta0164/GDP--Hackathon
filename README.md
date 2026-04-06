@@ -448,12 +448,80 @@ ALL TESTS PASSED — Ready to deploy!
 ## Deploy Done !!!! 
 
 
-=== LIVE DEPLOYMENT TEST ===
-1. health: ok
-2. validate: True
-3. tasks: 4
-4. leaderboard: 0
-5. reset OK: b4c43acc
-6. step score: 0.823
-7. grader score: 0.823
-=== ALL LIVE CHECKS DONE ===
+==================================================
+LOCAL TEST (localhost:7860)
+==================================================
+  PASS: health
+  PASS: validate
+  PASS: tasks(4)
+  PASS: leaderboard
+  PASS: reset | session=bab76bf6 context_keys=7
+  PASS: step | score=0.823
+  PASS: state | turn=1
+  PASS: grader | score=0.823
+  PASS: score_variance | scores=[0.772, 0.337, 1.0]
+
+  RESULT: 9 passed | 0 failed
+
+==================================================
+LIVE TEST (HuggingFace)
+==================================================
+  PASS: health
+  PASS: validate
+  PASS: tasks(4)
+  PASS: leaderboard
+  PASS: reset | session=0c0e1287 context_keys=7
+  PASS: step | score=0.823
+  PASS: state | turn=1
+  PASS: grader | score=0.823
+  PASS: score_variance | scores=[0.772, 0.337, 1.0]
+
+  RESULT: 9 passed | 0 failed
+
+==================================================
+FINAL SUMMARY
+==================================================
+Local:  9 passed | 0 failed
+Live:   9 passed | 0 failed
+
+ALL TESTS PASSED
+
+GITHUB URL:
+==================================================
+  PASS: health
+  PASS: validate
+  PASS: tasks(4)
+  PASS: leaderboard
+  PASS: reset | session=0c0e1287 context_keys=7
+  PASS: step | score=0.823
+  PASS: state | turn=1
+  PASS: grader | score=0.823
+  PASS: score_variance | scores=[0.772, 0.337, 1.0]
+
+  RESULT: 9 passed | 0 failed
+
+==================================================
+FINAL SUMMARY
+==================================================
+Local:  9 passed | 0 failed
+Live:   9 passed | 0 failed
+
+ALL TESTS PASSED
+
+GITHUB URL:
+  RESULT: 9 passed | 0 failed
+
+==================================================
+FINAL SUMMARY
+==================================================
+Local:  9 passed | 0 failed
+Live:   9 passed | 0 failed
+
+ALL TESTS PASSED
+READY TO SUBMIT
+
+SUBMIT URL:
+https://huggingface.co/spaces/abhishek0164/safetyguard-x
+
+GITHUB URL:
+https://github.com/AbhishekGupta0164/Meta-AI-OpenEnv-SST-Project.git
