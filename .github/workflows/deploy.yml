@@ -13,16 +13,23 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0        # full history needed for HF sync
+          fetch-depth: 0
           lfs: true
 
+      - name: Check HF_TOKEN is set
+        run: |
+          if [ -z "${{ secrets.HF_TOKEN }}" ]; then
+            echo "::warning::HF_TOKEN secret is not set – skipping HuggingFace deploy."
+            echo "SKIP_DEPLOY=true" >> $GITHUB_ENV
+          fi
+
       - name: Push to HuggingFace Space
+        if: env.SKIP_DEPLOY != 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           git config --global user.email "ci@github.com"
           git config --global user.name  "GitHub Actions"
-
-          git remote add hf https://AbhishekGupta0164:${HF_TOKEN}@huggingface.co/spaces/AbhishekGupta0164/Meta-AI-OpenEnv-SST-Project || true
-
+          git remote add hf https://AbhishekGupta0164:${HF_TOKEN}@huggingface.co/spaces/AbhishekGupta0164/Meta-AI-OpenEnv-SST-Project 2>/dev/null || \
+            git remote set-url hf https://AbhishekGupta0164:${HF_TOKEN}@huggingface.co/spaces/AbhishekGupta0164/Meta-AI-OpenEnv-SST-Project
           git push hf main --force

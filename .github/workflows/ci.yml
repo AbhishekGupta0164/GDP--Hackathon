@@ -20,14 +20,14 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install uv
-        run: pip install uv
-
       - name: Install dependencies
-        run: uv pip install --system -e ".[dev]"
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio httpx
 
       - name: Run tests
-        run: pytest tests/ -v --tb=short
+        run: python -m pytest tests/ -v --tb=short
 
   docker-build:
     name: Docker Build Check
@@ -44,6 +44,6 @@ jobs:
       - name: Smoke test – health endpoint
         run: |
           docker run -d --name sgx-ci -p 7860:7860 safetyguard-x:ci
-          sleep 8
-          curl --retry 5 --retry-delay 2 -f http://localhost:7860/health
+          sleep 10
+          curl --retry 6 --retry-delay 3 --retry-connrefused -f http://localhost:7860/health
           docker stop sgx-ci
