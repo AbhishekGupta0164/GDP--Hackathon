@@ -57,10 +57,10 @@ action_space:
     confidence:
       type: float
       required: false
-      range: [0.0, 1.0]
+      range: [0.01, 0.99]
 
 reward:
-  range: [0.0, 1.0]
+  range: [0.01, 0.99]
   type: continuous
   shaped: true
   dimensions:

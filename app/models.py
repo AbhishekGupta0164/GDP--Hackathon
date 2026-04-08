@@ -116,6 +116,11 @@ class Reward(BaseModel):
     feedback:  str
     penalty:   float = 0.0
     bonus:     float = 0.0
+    
+    @field_validator("score", mode="before")
+    @classmethod
+    def clamp_score(cls, v):
+        return max(0.01, min(0.99, round(float(v), 4)))
 
 
 class StepResult(BaseModel):
