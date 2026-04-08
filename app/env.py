@@ -608,8 +608,10 @@ def env_grader(session_id: str) -> Dict[str, Any]:
     episode = _get_session(session_id)
     result  = episode.grader.final_score(episode.memory)
 
-    # Clamp every value in breakdown — no 0.0 or 1.0 anywhere
-    safe_bd = {k: _clamp(float(v)) for k, v in result["breakdown"].items()}
+    # Use _safe_breakdown — only includes the 6 recognised score metrics,
+    # each already clamped to (0.01, 0.99). This guarantees no 0.0 / 1.0
+    # floats appear anywhere in the response (validator checks recursively).
+    safe_bd = _safe_breakdown(result["breakdown"])
 
     return {
         "session_id":      session_id,

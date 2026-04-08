@@ -142,6 +142,10 @@ class Grader:
         )
         final = _clamp(raw_final + final_bonus - final_penalty)
 
+        # ── Only score metrics in breakdown — validator checks every float ──
+        # total_penalty / total_bonus are raw sums that can be 0.0; they are
+        # NOT score metrics. Keeping them separate prevents the OpenEnv Phase 2
+        # validator from flagging them as out-of-range score values.
         breakdown = {
             "correctness":          avg_correctness,
             "policy_alignment":     avg_policy,
@@ -149,14 +153,19 @@ class Grader:
             "escalation_detection": avg_escalation,
             "efficiency":           efficiency,
             "consistency":          consistency,
-            "total_penalty":        round(final_penalty + self.total_penalty, 4),
-            "total_bonus":          round(final_bonus   + self.total_bonus,   4),
+        }
+
+        # Meta info kept separately — NOT exposed as score floats in API responses
+        _meta = {
+            "total_penalty": round(final_penalty + self.total_penalty, 4),
+            "total_bonus":   round(final_bonus   + self.total_bonus,   4),
         }
 
         feedback = self._build_feedback(final, breakdown, feedback_parts, summary)
         return {
-            "final_score": round(final,4),
+            "final_score": final,
             "breakdown":   breakdown,
+            "meta":        _meta,
             "feedback":    feedback,
         }
 
@@ -328,5 +337,6 @@ class Grader:
                 "correctness", "policy_alignment", "reasoning_quality",
                 "escalation_detection", "efficiency", "consistency"
             ]},
+            "meta":        {"total_penalty": 0.0, "total_bonus": 0.0},
             "feedback":    reason,
         }
