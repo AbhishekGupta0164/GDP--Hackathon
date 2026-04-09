@@ -44,9 +44,9 @@ GRADER_WEIGHTS = {
 }
 
 REWARDS = {
-    "correct_decision":       0.9999,
-    "partial_credit":         0.5000,
-    "wrong_decision":         0.0001,
+    "correct_decision":       0.99,
+    "partial_credit":         0.5,
+    "wrong_decision":         0.01,
     "invalid_action":        -0.1,
     "late_escalation":       -0.2,
     "over_blocking":         -0.2,
@@ -87,10 +87,10 @@ ESCALATION_THRESHOLD    = 3
 LATE_ESCALATION_TURN    = 2
 
 EXPECTED_BASELINE_SCORES = {
-    "easy":   0.8999,
-    "medium": 0.7499,
-    "hard":   0.5499,
-    "expert": 0.4499,
+    "easy":   0.90,
+    "medium": 0.75,
+    "hard":   0.55,
+    "expert": 0.45,
 }
 
 import os

@@ -72,7 +72,7 @@ def list_all_tasks() -> List[TaskInfo]:
             num_scenarios=meta["num_scenarios"],
             action_schema={
                 "type": "object",
-                "properties": {
+                "fields": {
                     "decision": {
                         "type": "string",
                         "enum": ["allow","block","modify","escalate","clarify"],
@@ -91,7 +91,7 @@ def list_all_tasks() -> List[TaskInfo]:
                     },
                     "confidence": {
                         "type": "float",
-                        "range": [0.0001, 0.9999],
+                        "range": [0.01, 0.99],
                         "required": False,
                         "default": 0.5,
                     },

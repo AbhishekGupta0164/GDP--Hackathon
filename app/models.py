@@ -11,11 +11,11 @@ def _clamp_score(v: float) -> float:
         f = float(v)
         if not math.isfinite(f):
             return 0.5
-    # Round to 4dp and clamp to [0.0001, 0.9999]
-    val = round(f, 4)
-    if val <= 0.0001: return 0.0001
-    if val >= 0.9999: return 0.9999
-    return val
+        # Round to 4dp and clamp to [0.01, 0.99]
+        val = round(f, 4)
+        if val <= 0.01: return 0.01
+        if val >= 0.99: return 0.99
+        return val
     except (TypeError, ValueError):
         return 0.5
 
@@ -160,7 +160,7 @@ class Reward(BaseModel):
     @field_validator("score", mode="before")
     @classmethod
     def clamp_score(cls, v):
-        """score must always be strictly in (0.0001, 0.9999)."""
+        """score must always be strictly in (0.01, 0.99)."""
         return _clamp_score(float(v))
 
     @field_validator("breakdown", mode="before")

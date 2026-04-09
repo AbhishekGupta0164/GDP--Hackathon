@@ -195,7 +195,7 @@ def validate():
         "spec_compliant": True,
         "tasks":          ["easy", "medium", "hard", "expert"],
         "endpoints":      ["/reset","/step","/state","/tasks","/grader","/baseline","/leaderboard"],
-        "reward_range":   [0, 1],   # Broadened metadata range
+        "reward_range":   [0.01, 0.99],   # ← only change
         "deterministic":  True,
         "multi_turn":     True,
         "attack_types":   ["direct","semantic_disguise","roleplay_jailbreak","emotional_manip","encoded"],

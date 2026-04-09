@@ -15,13 +15,13 @@ from typing import Any, Dict, List, Optional
 
 # ── Score clamp helper ────────────────────────────────────────
 def _clamp(v: float) -> float:
-    """Force any float into strictly open interval (0.0001, 0.9999)."""
+    """Force any float into strictly open interval (0.01, 0.99)."""
     try:
         f = float(v)
         if not math.isfinite(f): return 0.5
         val = round(f, 4)
-        if val <= 0.0001: return 0.0001
-        if val >= 0.9999: return 0.9999
+        if val <= 0.01: return 0.01
+        if val >= 0.99: return 0.99
         return val
     except (TypeError, ValueError):
         return 0.5
@@ -148,7 +148,7 @@ def run_episode(task_id: str, scenario_index: int = 0) -> float:
     session_id  = reset["session_id"]
     observation = reset["observation"]
     messages    = [{"role": "system", "content": SYSTEM_PROMPT}]
-    final_score = 0.0001
+    final_score = 0.01
 
     for _ in range(observation["max_turns"] + 1):
         if observation.get("done"):
@@ -216,7 +216,7 @@ def run_baseline() -> List[Dict[str, Any]]:
         for ep in range(n_run):
             try:
                 score = run_episode(task_id, scenario_index=ep)
-                score = max(0.0001, min(0.9999, score))
+                score = max(0.01, min(0.99, score))
                 scores.append(score)
                 print("  Episode " + str(ep+1) + "/" + str(n_run) + ": score=" + str(round(score,4)))
             except Exception as e:
