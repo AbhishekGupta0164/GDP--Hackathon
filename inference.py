@@ -345,7 +345,7 @@ def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> No
     success_val  = str(success).lower()
     print(
         f"[END] success={success_val} steps={steps} "
-        f"score={safe_score:.2f} rewards={rewards_str}",
+        f"score={safe_score:.4f} rewards={rewards_str}",
         flush=True,
     )
 
@@ -554,12 +554,12 @@ def _main_inner():
                 log_end(success=False, steps=0, score=0.01, rewards=[])
                 scores.append(0.01)
 
-        mean = round(statistics.mean(scores), 4) if scores else 0.01
-        mean = _clamp(mean)
+        mean = statistics.mean(scores) if scores else 0.01
+        mean = _clamp(round(mean, 4))
         all_scores.append(mean)
 
-    overall = round(statistics.mean(all_scores), 4) if all_scores else 0.01
-    overall = _clamp(overall)
+    overall = statistics.mean(all_scores) if all_scores else 0.01
+    overall = _clamp(round(overall, 4))
     print(f"\nOVERALL MEAN SCORE: {overall}", flush=True)
 
     with open("baseline_scores.json", "w") as f:

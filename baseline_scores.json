@@ -1,10 +1,10 @@
 {
   "model": "mock_agent",
-  "overall": 0.8716,
+  "overall": 0.8649,
   "tasks": {
-    "easy": 0.899,
-    "medium": 0.8892,
-    "hard": 0.819,
-    "expert": 0.879
+    "easy": 0.8923,
+    "medium": 0.8833,
+    "hard": 0.8121,
+    "expert": 0.8718
   }
 }

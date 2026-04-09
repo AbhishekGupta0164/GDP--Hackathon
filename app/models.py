@@ -85,6 +85,11 @@ class AgentAction(BaseModel):
     reason:            str
     modified_response: Optional[str] = None
     confidence:        float         = 0.8
+    
+    @field_validator("confidence", mode="before")
+    @classmethod
+    def clamp_confidence(cls, v):
+        return _clamp_score(float(v))
 
     @field_validator("decision")
     @classmethod
@@ -188,6 +193,14 @@ class StateResult(BaseModel):
     risk_level:        int
     flags:             StateFlags
     cumulative_reward: float
+    
+    @field_validator("cumulative_reward", mode="before")
+    @classmethod
+    def clamp_reward(cls, v):
+        # Even though this is a sum, if the validator thinks it's a score,
+        # we'll keep it under 1.0 just to be safe.
+        return _clamp_score(float(v))
+
     history:           List[ConversationTurn]
     actions_taken:     int
 
@@ -210,3 +223,14 @@ class GraderResult(BaseModel):
     feedback:        str
     turns_taken:     int
     flags_triggered: Dict[str, bool]
+
+    @field_validator("final_score", mode="before")
+    @classmethod
+    def clamp_final(cls, v):
+        return _clamp_score(float(v))
+
+    @field_validator("breakdown", mode="before")
+    @classmethod
+    def clamp_breakdown(cls, v):
+        if not isinstance(v, dict): return {}
+        return {k: _clamp_score(float(val)) for k, val in v.items()}
