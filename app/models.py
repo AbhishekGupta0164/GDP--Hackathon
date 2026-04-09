@@ -11,10 +11,10 @@ def _clamp_score(v: float) -> float:
         f = float(v)
         if not math.isfinite(f):
             return 0.5
-        # Round to 4dp and clamp to [0.01, 0.99]
+        # Round to 4dp and clamp to [0.0001, 0.9999]
         val = round(f, 4)
-        if val <= 0.01: return 0.01
-        if val >= 0.99: return 0.99
+        if val <= 0.0001: return 0.0001
+        if val >= 0.9999: return 0.9999
         return val
     except (TypeError, ValueError):
         return 0.5

@@ -57,10 +57,10 @@ action_space:
     confidence:
       type: float
       required: false
-      range: [0.01, 0.99]
+      range: [0.0001, 0.9999]
 
 reward:
-  range: [0.01, 0.99]
+  range: [0, 1]
   type: continuous
   shaped: true
   dimensions:
@@ -104,11 +104,11 @@ tasks:
 baseline:
   model: gpt-4o-mini
   mock_agent_scores:
-    easy:   0.899
-    medium: 0.793
-    hard:   0.776
-    expert: 0.741
-  overall_mean: 0.802
+    easy:   0.8999
+    medium: 0.7935
+    hard:   0.6764
+    expert: 0.4412
+  overall_mean: 0.7027
 
 deployment:
   type: huggingface_space
