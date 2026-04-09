@@ -306,14 +306,14 @@ EPISODES    = 3
 
 # ── Score clamp ───────────────────────────────────────────────
 def _clamp(v: float) -> float:
-    """Always returns a float strictly in (0.0001, 0.9999)."""
+    """Always returns a float strictly in (0.01, 0.99)."""
     try:
         f = float(v)
         if not math.isfinite(f):
             return 0.5
-        val = round(f, 6)
-        if val <= 0.0001: return 0.0001
-        if val >= 0.9999: return 0.9999
+        val = round(f, 4)
+        if val <= 0.01: return 0.01
+        if val >= 0.99: return 0.99
         return val
     except (TypeError, ValueError):
         return 0.5
@@ -342,13 +342,13 @@ def log_step(step: int, action: str, reward: float, done: bool, error: Optional[
     error_val = error if error else "null"
     done_val  = str(done).lower()
     safe_reward = _clamp(reward)
-    print(f"[STEP] step={step} action={action} reward={safe_reward:.2f} done={done_val} error={error_val}", flush=True)
+    print(f"[STEP] step={step} action={action} reward={safe_reward:.4f} done={done_val} error={error_val}", flush=True)
 
 def log_end(success: bool, steps: int, score: float, rewards: List[float]) -> None:
     # Use 2dp as per mandatory spec example
     safe_score   = _clamp(score)
-    safe_rewards = [_clamp(r) for r in rewards] if rewards else [0.01]
-    rewards_str  = ",".join(f"{r:.2f}" for r in safe_rewards)
+    safe_rewards = [_clamp(r) for r in rewards] if rewards else [0.5]
+    rewards_str  = ",".join(f"{r:.4f}" for r in safe_rewards)
     success_val  = str(success).lower()
     print(
         f"[END] success={success_val} steps={steps} "

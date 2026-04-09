@@ -13,16 +13,16 @@ from app.config import (
 from app.memory import MemoryEngine
 
 # ── The ONE clamp used everywhere ─────────────────────────────────────────────
-_SCORE_MIN = 0.0001
-_SCORE_MAX = 0.9999
+_SCORE_MIN = 0.01
+_SCORE_MAX = 0.99
 
 
 def _clamp(score: float) -> float:
-    """Force every score into open interval (0.0001, 0.9999) — never 0.0 or 1.0."""
+    """Force every score into open interval (0.01, 0.99) — never 0.0 or 1.0."""
     try:
         f = float(score)
         if not math.isfinite(f): return 0.5
-        val = round(f, 6)
+        val = round(f, 4)
         if val <= _SCORE_MIN: return _SCORE_MIN
         if val >= _SCORE_MAX: return _SCORE_MAX
         return val
@@ -152,8 +152,8 @@ class Grader:
         final = _clamp(raw_final + final_bonus - final_penalty)
         
         # Extra safety boundary check
-        if final >= 0.9999: final = 0.9999
-        if final <= 0.0001: final = 0.0001
+        if final >= 0.99: final = 0.99
+        if final <= 0.01: final = 0.01
 
         # ── Only score metrics in breakdown — validator checks every float ──
         # total_penalty / total_bonus are raw sums that can be 0.0; they are

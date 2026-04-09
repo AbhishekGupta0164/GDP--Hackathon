@@ -6,16 +6,15 @@ import math
 
 # ── Score clamp helper ────────────────────────────────────────────────────────
 def _clamp_score(v: float) -> float:
-    """Force any float into strictly open interval (0.0001, 0.9999)."""
+    """Force any float into strictly open interval (0.01, 0.99)."""
     try:
         f = float(v)
         if not math.isfinite(f):
             return 0.5
-        # Round to 6dp first to eliminate tiny float leftovers, 
-        # then clamp to strictly narrow range.
-        val = round(f, 6)
-        if val <= 0.0001: return 0.0001
-        if val >= 0.9999: return 0.9999
+        # Round to 4dp and clamp to [0.01, 0.99]
+        val = round(f, 4)
+        if val <= 0.01: return 0.01
+        if val >= 0.99: return 0.99
         return val
     except (TypeError, ValueError):
         return 0.5
