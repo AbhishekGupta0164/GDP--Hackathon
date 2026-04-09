@@ -59,7 +59,8 @@ class SafetyGuardXEnv:
 
     async def reset(self, task_id: str):
         url = f"{self.base_url}/reset"
-        body = {"task_id": task_id, "scenario_index": 0}
+        scenario_idx = int(os.getenv("SCENARIO_INDEX", "0"))
+        body = {"task_id": task_id, "scenario_index": scenario_idx}
         resp = self._call("POST", url, body)
         self.session_id = resp["session_id"]
         return resp
