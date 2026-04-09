@@ -20,6 +20,7 @@ Stdout format (must not deviate):
 import os
 import re
 import textwrap
+import time
 from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
@@ -142,15 +143,25 @@ def get_model_action(client: Optional[OpenAI], observation: Dict[str, Any], hist
 def run_task(client: Optional[OpenAI], task_name: str) -> None:
     env = SafetyGuardClient(base_url=ENV_BASE_URL)
     history: List[str] = []
-    rewards: List [float] = []
+    rewards: List[float] = []
     steps_taken = 0
     success = False
     score = 0.0
+    session_id: Optional[str] = None
 
     log_start(task=task_name, env=BENCHMARK, model=MODEL_NAME)
 
     try:
-        reset = env.reset(task_id=task_name, scenario_index=SCENARIO_INDEX)
+        reset = None
+        for attempt in range(3):
+            try:
+                reset = env.reset(task_id=task_name, scenario_index=SCENARIO_INDEX)
+                break
+            except Exception:
+                time.sleep(0.4 * (attempt + 1))
+        if reset is None:
+            raise RuntimeError("reset failed")
+
         session_id = reset["session_id"]
         result: Dict[str, Any] = {"observation": reset["observation"], "done": False}
 
@@ -170,11 +181,18 @@ def run_task(client: Optional[OpenAI], task_name: str) -> None:
             }
 
             error: Optional[str] = None
-            try:
-                result = env.step(session_id=session_id, action=action_payload)
-            except Exception as exc:
-                error = str(exc)
+            step_result = None
+            for attempt in range(3):
+                try:
+                    step_result = env.step(session_id=session_id, action=action_payload)
+                    break
+                except Exception as exc:
+                    error = str(exc)
+                    time.sleep(0.3 * (attempt + 1))
+            if step_result is None:
                 result = {"reward": {"score": 0.0}, "done": True}
+            else:
+                result = step_result
 
             reward = float(result.get("reward", {}).get("score", 0.0))
             done = bool(result.get("done", False))
@@ -187,14 +205,28 @@ def run_task(client: Optional[OpenAI], task_name: str) -> None:
             if done:
                 break
 
-        grader = env.grader(session_id=session_id)
-        score = float(grader.get("final_score", 0.0))
-        score = _clamp_score(score)
-        success = score >= SUCCESS_SCORE_THRESHOLD
+        grader = None
+        for attempt in range(3):
+            try:
+                grader = env.grader(session_id=session_id)
+                break
+            except Exception:
+                time.sleep(0.4 * (attempt + 1))
+        if grader is not None:
+            score = _clamp_score(float(grader.get("final_score", 0.0)))
+            success = score >= SUCCESS_SCORE_THRESHOLD
 
     except Exception:
         pass
     finally:
+        # Final guard: if we have a session but no final score yet, try grader once more.
+        if session_id and score <= 0.0:
+            try:
+                grader = env.grader(session_id=session_id)
+                score = _clamp_score(float(grader.get("final_score", 0.0)))
+                success = score >= SUCCESS_SCORE_THRESHOLD
+            except Exception:
+                score = _clamp_score(score)
         log_end(success=success, steps=steps_taken, score=score, rewards=rewards)
 
 
