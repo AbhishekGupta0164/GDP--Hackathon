@@ -71,6 +71,8 @@ def list_all_tasks() -> List[TaskInfo]:
             max_turns=meta["max_turns"],
             num_scenarios=meta["num_scenarios"],
             has_grader=True,
+            grader=f"app.grader.Grader",
+            capabilities=["grader", "multi_turn"],
             action_schema={
                 "type": "object",
                 "properties": {
