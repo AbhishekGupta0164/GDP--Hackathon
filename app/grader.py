@@ -13,12 +13,14 @@ from app.config import (
 from app.memory import MemoryEngine
 
 # ── The ONE clamp used everywhere ─────────────────────────────────────────────
-_SCORE_MIN = 0.0001
-_SCORE_MAX = 0.9999
+# Keep a safe margin from 0/1 so external validators that round scores
+# never interpret values as exactly 0.0 or 1.0.
+_SCORE_MIN = 0.001
+_SCORE_MAX = 0.999
 
 
 def _clamp(score: float) -> float:
-    """Force every score into open interval (0.01, 0.99) — never 0.0 or 1.0."""
+    """Force every score into open interval (0, 1) — never 0.0 or 1.0."""
     try:
         f = float(score)
         if not math.isfinite(f): return 0.5
