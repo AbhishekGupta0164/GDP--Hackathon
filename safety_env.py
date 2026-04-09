@@ -3,6 +3,18 @@ import urllib.request
 import urllib.error
 from typing import Dict, Any, Optional, List
 
+def _clamp_score(v: float) -> float:
+    """Clamp score-like values to strict open interval (0.01, 0.99)."""
+    try:
+        f = float(v)
+        if f <= 0.01:
+            return 0.01
+        if f >= 0.99:
+            return 0.99
+        return f
+    except (TypeError, ValueError):
+        return 0.5
+
 class SafetyGuardXAction:
     def __init__(self, decision: str, reason: str, confidence: float = 0.8, modified_response: Optional[str] = None):
         self.decision = decision
@@ -37,7 +49,7 @@ class SafetyGuardXObservation:
 class SafetyGuardXResult:
     def __init__(self, observation_data: Dict[str, Any], reward_data: Optional[Dict[str, Any]] = None, done: bool = False):
         self.observation = SafetyGuardXObservation(observation_data)
-        self.reward = reward_data.get("score") if reward_data else 0.0
+        self.reward = _clamp_score(reward_data.get("score", 0.5)) if reward_data else 0.5
         self.done = done
 
 class SafetyGuardXEnv:
@@ -86,7 +98,7 @@ class SafetyGuardXEnv:
         url = f"{self.base_url}/grader"
         body = {"session_id": self.session_id}
         data = self._call("POST", url, body)
-        return float(data.get("final_score", 0.5))
+        return _clamp_score(data.get("final_score", 0.5))
 
     async def close(self):
         # Cleanup if needed
