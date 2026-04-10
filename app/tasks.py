@@ -61,6 +61,13 @@ def get_turn(scenario: Dict[str, Any], turn_number: int) -> Optional[Dict[str, A
 def list_all_tasks() -> List[TaskInfo]:
     """Return TaskInfo for all 4 tasks — used by /tasks endpoint."""
     result = []
+    # Mapping to match openenv.yaml configuration
+    grader_map = {
+        "easy":   "graders:exact_match",
+        "medium": "graders:contains",
+        "hard":   "graders:policy_grader",
+        "expert": "graders:policy_grader",
+    }
     for task_id in ["easy", "medium", "hard", "expert"]:
         meta = get_task_metadata(task_id)
         result.append(TaskInfo(
@@ -72,7 +79,7 @@ def list_all_tasks() -> List[TaskInfo]:
             num_scenarios=meta["num_scenarios"],
             has_grader=True,
             has_autograder=True,
-            grader="graders:policy_grader",
+            grader=grader_map.get(task_id, "graders:policy_grader"),
             capabilities=["text", "multi-turn"],
             action_schema={
 

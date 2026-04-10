@@ -164,3 +164,47 @@ class GraderResult(BaseModel):
     def clamp_breakdown(cls, v):
         if not isinstance(v, dict): return {}
         return {k: _clamp_score(float(val)) for k, val in v.items()}
+
+class Reward(BaseModel):
+    score:     float
+    breakdown: Dict[str, float]
+    feedback:  str
+
+    @field_validator("score", mode="before")
+    @classmethod
+    def clamp_score_val(cls, v):
+        return _clamp_score(float(v))
+
+    @field_validator("breakdown", mode="before")
+    @classmethod
+    def clamp_breakdown_val(cls, v):
+        if not isinstance(v, dict): return {}
+        return {k: _clamp_score(float(val)) for k, val in v.items()}
+
+class ResetResult(BaseModel):
+    session_id:  str
+    task_id:     str
+    observation: Observation
+
+class StepResult(BaseModel):
+    observation: Observation
+    reward:      Reward
+    done:        bool
+    info:        Dict[str, Any] = {}
+
+class StateResult(BaseModel):
+    session_id:        str
+    task_id:           str
+    turn_number:       int
+    max_turns:         int
+    done:              bool
+    risk_level:        int
+    flags:             StateFlags
+    cumulative_reward: float
+    history:           List[ConversationTurn] = []
+    actions_taken:     int
+
+    @field_validator("cumulative_reward", mode="before")
+    @classmethod
+    def clamp_cum_reward(cls, v):
+        return _clamp_score(float(v))
