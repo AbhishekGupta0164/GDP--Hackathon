@@ -88,26 +88,23 @@ def list_all_tasks() -> List[TaskInfo]:
                     "decision": {
                         "type": "string",
                         "enum": ["allow","block","modify","escalate","clarify"],
-                        "required": True,
                     },
                     "reason": {
                         "type": "string",
                         "description": "Explain WHY using policy terms",
-                        "required": True,
                         "min_length": 10,
                     },
                     "modified_response": {
                         "type": "string",
                         "description": "Required only when decision=modify",
-                        "required": False,
                     },
                     "confidence": {
                         "type": "float",
                         "range": [0.01, 0.99],
-                        "required": False,
                         "default": 0.5,
                     },
                 },
+                "required": ["decision", "reason"],
             },
         ))
     return result
