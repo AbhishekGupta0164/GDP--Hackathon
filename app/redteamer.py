@@ -66,7 +66,7 @@ class BasiliskRedTeamer:
             attack_type = random.choice(["direct", "emotional"])
         elif last_flags.get("roleplay_attempt"):
             attack_type = "roleplay"
-        elif last_flags.get("encoded"):
+        elif last_flags.get("encoded_detected"):
             attack_type = "encoded"
         else:
             attack_type = random.choice(list(self.mock_templates.keys()))

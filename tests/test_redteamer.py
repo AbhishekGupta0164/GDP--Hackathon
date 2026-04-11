@@ -25,7 +25,7 @@ def test_mock_generation():
         },
         {
             "label": "Encoded attack detected",
-            "ctx": {"last_decision": "block", "risk_level": 5, "flags": {"encoded": True}}
+            "ctx": {"last_decision": "block", "risk_level": 5, "flags": {"encoded_detected": True}}
         },
         {
             "label": "Standard fallback",
