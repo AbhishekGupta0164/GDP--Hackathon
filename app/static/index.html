@@ -1366,16 +1366,16 @@
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: var(--r);
-      padding: 14px;
+      padding: 10px 12px;
     }
 
     .an-title {
-      font-size: .68rem;
+      font-size: .62rem;
       font-weight: 700;
       letter-spacing: 1px;
       text-transform: uppercase;
       color: var(--text3);
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
     .score-big {
@@ -2763,17 +2763,17 @@
            <!-- Row 2: Safety Trend & Radar -->
            <div class="an-card">
               <div class="an-title">Safety Score Trend</div>
-              <div id="chart-trend" style="width:100%; height:220px;"></div>
+              <div id="chart-trend" style="width:100%; height:160px;"></div>
            </div>
            <div class="an-card">
               <div class="an-title">Safety Signature (Radar)</div>
-              <div id="chart-radar" style="width:100%; height:220px;"></div>
+              <div id="chart-radar" style="width:100%; height:160px;"></div>
            </div>
 
            <!-- Row 3: Decision Profile & Risk Profile -->
            <div class="an-card">
               <div class="an-title">Decision Profile</div>
-              <div id="chart-pie" style="width:100%; height:220px;"></div>
+              <div id="chart-pie" style="width:100%; height:160px;"></div>
            </div>
            <div class="an-card">
               <div class="an-title">Risk Exposure Matrix</div>
@@ -3688,6 +3688,47 @@
       });
     }
 
+    /* ════════════════════════════ HISTORY TAB */
+    function renderHistory() {
+      const hl = $('hist-list'); hl.innerHTML = '';
+      if (S.completedEpisodes.length === 0) {
+        hl.innerHTML = '<div class="hist-empty">No completed episodes yet.<br>Complete an episode to see history here.</div>';
+        return;
+      }
+      S.completedEpisodes.slice().reverse().forEach((ep, i) => {
+        const d = document.createElement('div'); d.className = 'hist-card';
+        const tm = { easy: 'tt-easy', medium: 'tt-medium', hard: 'tt-hard', expert: 'tt-expert' };
+        d.innerHTML = `
+          <div class="hc-top">
+            <span class="hc-task ${tm[ep.task]}">${ep.task.toUpperCase()}</span>
+            <span class="hc-score" style="color:${GRADES.find(g => ep.score >= g.min).c}">${ep.score}</span>
+          </div>
+          <div class="hc-query">${truncate(ep.turns[0].query, 80)}</div>
+          <div class="hc-bottom">
+            <span class="hc-turn">${ep.turns.length} turns</span>
+            <span class="hc-turn">• ${ep.timestamp}</span>
+            <span class="hc-turn">• ${ep.mode.toUpperCase()}</span>
+          </div>
+        `;
+        d.onclick = () => {
+          S.history = ep.turns; S.task = ep.task; S.scenario = ep.scenario;
+          switchTab('dashboard');
+          // Update UI state
+          updateTE(); updateMetrics(); updatePills();
+          $('comp-section').style.display = 'block';
+          const cc = $('comp-container'); cc.innerHTML = '';
+          S.history.forEach((h, idx) => {
+             const row = document.createElement('div'); row.className = 'comp-row';
+             let expVal = 'block'; try { expVal = SCENARIOS[S.task][S.scenario].queries[idx].exp; } catch(e) {}
+             row.innerHTML = `<span class="comp-lbl">T${h.turn}</span><span class="comp-badge hcd-${expVal}" style="background:${expVal === 'block' ? 'var(--red-dim)' : expVal === 'allow' ? 'var(--green-dim)' : 'var(--yellow-dim)'};">${expVal.toUpperCase()}</span><span class="comp-vs">vs</span><span class="comp-badge hcd-${h.decision}">${h.decision.toUpperCase()}</span><span class="comp-result">${h.correct ? '✅' : '❌'}</span>`;
+             cc.appendChild(row);
+          });
+          toast('Loaded episode from history', 'i');
+        };
+        hl.appendChild(d);
+      });
+    }
+ 
     /* ════════════════════════════ BURST */
     function burst() {
       const c = $('burst-canvas'); const ctx = c.getContext('2d');
