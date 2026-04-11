@@ -1082,6 +1082,13 @@
 
     .d-btn:hover {
       transform: translateY(-2px);
+      border-color: var(--border2);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .d-btn:active {
+      transform: translateY(0) scale(0.96);
+      transition: all 0.05s;
     }
 
     .d-btn.sel-allow {
@@ -3071,7 +3078,7 @@
       } else if (mode === 'manual') {
         mi.className = 'mode-indicator manual'; $('mi-icon').textContent = '👤';
         $('mi-text').textContent = 'MANUAL MODE — You evaluate each query. Your score is compared against the correct answer.';
-        ar.style.display = 'none'; ms.style.display = S.sid ? 'block' : 'none';
+        ar.style.display = 'none'; ms.style.display = 'block'; // Always show for interaction
         al.style.display = 'none';
         cs.style.display = S.history.length > 0 ? 'block' : 'none';
         $('btn-run').textContent = '▶ SUBMIT';
@@ -3081,12 +3088,11 @@
         $('mi-icon').textContent = '✏️';
         $('mi-text').textContent = 'CUSTOM MODE — Type your own query and evaluate it against the safety policies.';
         ar.style.display = 'none';
-        ms.style.display = 'block'; // Always show in custom if we have a query
+        ms.style.display = 'block'; // Always show in custom
         al.style.display = 'none';
         cs.style.display = 'none';
         $('btn-run').textContent = '▶ SUBMIT';
         if ($('btn-submit')) $('btn-submit').disabled = false;
-        // Show custom query input
         $('custom-query-wrap').style.display = 'block';
       }
     }
@@ -3398,6 +3404,7 @@
           const ss = $('sess-status'); ss.className = 'status-pill sp-done'; ss.textContent = 'COMPLETE';
           // Save to completed
           S.completedEpisodes.push({ task: S.task, scenario: S.scenario, score: Math.floor(S.reward + 0.5), mode: 'auto', turns: S.history.slice(), timestamp: new Date().toLocaleTimeString() });
+          renderHistory(); // Refresh history tab
           setTimeout(showFinal, 600);
         } else {
           S.turn++; S.query = SCENARIOS[S.task][S.scenario].queries[S.turn - 1];
@@ -3503,6 +3510,7 @@
           const ss = $('sess-status'); ss.className = 'status-pill sp-done'; ss.textContent = 'COMPLETE';
           btn.disabled = true;
           S.completedEpisodes.push({ task: S.task, scenario: S.scenario, score: Math.floor(S.reward + 0.5), mode: S.mode, turns: S.history.slice(), timestamp: new Date().toLocaleTimeString() });
+          renderHistory(); // Refresh history tab
           setTimeout(showFinal, 600);
         } else {
           S.turn++; 
@@ -3698,12 +3706,15 @@
       S.completedEpisodes.slice().reverse().forEach((ep, i) => {
         const d = document.createElement('div'); d.className = 'hist-card';
         const tm = { easy: 'tt-easy', medium: 'tt-medium', hard: 'tt-hard', expert: 'tt-expert' };
+        const grade = GRADES.find(g => ep.score >= g.min) || GRADES[GRADES.length - 1];
+        const displayQuery = ep.turns && ep.turns[0] ? (ep.turns[0].user_query || ep.turns[0].query || 'No query data') : 'Episode Started';
+        
         d.innerHTML = `
           <div class="hc-top">
-            <span class="hc-task ${tm[ep.task]}">${ep.task.toUpperCase()}</span>
-            <span class="hc-score" style="color:${GRADES.find(g => ep.score >= g.min).c}">${ep.score}</span>
+            <span class="hc-task ${tm[ep.task] || ''}">${(ep.task || 'TASK').toUpperCase()}</span>
+            <span class="hc-score" style="color:${grade.c}">${ep.score}%</span>
           </div>
-          <div class="hc-query">${truncate(ep.turns[0].query, 80)}</div>
+          <div class="hc-query">${truncate(displayQuery, 80)}</div>
           <div class="hc-bottom">
             <span class="hc-turn">${ep.turns.length} turns</span>
             <span class="hc-turn">• ${ep.timestamp}</span>
@@ -3767,6 +3778,11 @@
       // Override current query with custom one
       S.query = { text, at, exp: 'block', risk };
 
+      // RESET STATE for new custom query
+      S.done = false;
+      S.decision = null;
+      document.querySelectorAll('.d-btn').forEach(b => b.className = 'd-btn');
+
       // Update query display
       const qt = $('q-text');
       typeText(qt, text);
@@ -3776,7 +3792,8 @@
       updateTriggers(S.query);
 
       // Simulation of decoding for immediate UX feedback
-      if ($('decoded-intent-card').style.display === 'block') {
+      if ($('decoded-intent-card')) {
+         $('decoded-intent-card').style.display = 'block';
          setTimeout(() => {
             let decoded = text;
             try {
@@ -3796,15 +3813,18 @@
          }, 800);
       }
 
-      // Enable submit
+      // Enable submit and show manual section
+      if (S.mode === 'custom') {
+        $('manual-section').style.display = 'block';
+        $('btn-submit').disabled = false;
+      }
+      
       if (!S.sid) {
         // Create a mini session if none exists
         S.sid = genId();
         S.turn = 1; S.maxTurns = 3; S.status = 'active';
         $('sess-id').textContent = S.sid;
         const ss = $('sess-status'); ss.className = 'status-pill sp-active'; ss.textContent = 'ACTIVE';
-        $('manual-section').style.display = 'block';
-        $('btn-submit').disabled = false;
       }
 
       toast('Custom query loaded — select your decision', 's');

@@ -175,8 +175,8 @@ except ImportError:
 def assert_eq(a, b):
     assert a == b, str(a) + " != " + str(b)
 
-def assert_true(v):
-    assert v
+def assert_true(v, msg="Assertion failed"):
+    assert v, msg
 
 # ── Summary ───────────────────────────────────────────────────
 print("\n" + "="*55)
