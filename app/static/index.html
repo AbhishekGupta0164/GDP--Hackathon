@@ -683,6 +683,7 @@
       padding: 14px;
       flex-direction: column;
       gap: 12px;
+      min-height: 0; /* Fix for flex children scrolling */
     }
 
     .tab-content.active {
@@ -3192,6 +3193,47 @@
       });
     }
 
+    /* ════════════════════════════ MODES */
+    function setMode(mode) {
+      S.mode = mode;
+      
+      // Toggle button highlights
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.remove('active');
+        if (b.id === 'mode-' + mode) b.classList.add('active');
+      });
+      
+      // Update indicators
+      const mi = $('mode-indicator');
+      mi.className = 'mode-indicator ' + mode;
+      
+      if (mode === 'auto') {
+        $('mi-icon').textContent = '🤖';
+        $('mi-text').textContent = 'AUTO MODE — AI agent will automatically process each query and show its reasoning';
+        $('auto-result').style.display = 'block';
+        $('auto-log').style.display = 'block';
+        $('manual-section').style.display = 'none';
+        $('custom-query-wrap').style.display = 'none';
+      } else if (mode === 'manual') {
+        $('mi-icon').textContent = '👤';
+        $('mi-text').textContent = 'MANUAL MODE — Evaluate queries yourself and justify your policy decisions';
+        $('auto-result').style.display = 'none';
+        $('auto-log').style.display = 'none';
+        $('manual-section').style.display = 'block';
+        $('custom-query-wrap').style.display = 'none';
+      } else if (mode === 'custom') {
+        $('mi-icon').textContent = '✏️';
+        $('mi-text').textContent = 'CUSTOM MODE — Load your own adversarial queries and test the safety engine';
+        $('auto-result').style.display = 'none';
+        $('auto-log').style.display = 'none';
+        $('manual-section').style.display = 'block'; // Allow decisions on custom queries
+        $('custom-query-wrap').style.display = 'block';
+      }
+      
+      toast('Switched to ' + mode.toUpperCase() + ' mode', 'i');
+      updateTriggers(S.query || { text: '' });
+    }
+
     /* ════════════════════════════ THINKING TRACE */
     function runTrace(decision, risk) {
       const steps = [{ done: true }, { done: true }, { done: true }, { done: risk >= 3 }, { done: true }];
@@ -3416,13 +3458,11 @@
               session_id: S.backendSid, 
               action: { 
                 decision, 
-                reason, 
-                modified_response: modified || null, 
+                reason: reason, 
                 confidence: confidence / 100,
-                // Unified Flow: Support custom query evaluation in the backend
-                query_text: S.mode === 'custom' ? query.text : null,
-                risk_level: S.mode === 'custom' ? query.risk : null,
-                attack_type: S.mode === 'custom' ? query.at : null
+                query_text: S.mode === 'custom' ? S.query.text : null,
+                risk_level: S.mode === 'custom' ? S.query.risk : null,
+                attack_type: S.mode === 'custom' ? S.query.at : null
               } 
             }) 
           })
@@ -3431,33 +3471,25 @@
               if (res.info && res.info.decoded_query) {
                 const dc = $('decoded-intent-card');
                 dc.style.display = 'block';
-                dc.style.background = 'rgba(16, 24, 40, 0.85)';
-                dc.style.backdropFilter = 'blur(10px)';
-                dc.style.border = '1px solid var(--cyan-dim)';
-                $('decoded-text').textContent = res.info.decoded_query;
-                $('decoded-text').style.color = 'var(--cyan)';
-                $('decoded-text').style.textShadow = '0 0 10px var(--cyan-glow)';
-              } else {
-                $('decoded-intent-card').style.display = 'none';
+                dc.className = 'decoded-intent-card glass-glow'; // Apply surgery UI styles
+                $('decoded-text').textContent = 'REAL STATEMENT: ' + res.info.decoded_query;
+                toast('Server de-obfuscation complete', 's');
               }
             }).catch(() => { });
         }
-
-        // Update breakdown
-        runTrace(decision, query.risk);
-        updateBreakdown(decision, reason, confidence);
-
+        
         // Show comparison
         const entry = { turn: S.turn, query: query.text, at: query.at, decision, reason, risk: query.risk, correct: decision === query.exp };
         S.history.push(entry); addRH(entry); updateTE(); updateMetrics(); updatePills();
-
+        
         // Update comparison section
         $('comp-section').style.display = 'block';
         const cc = $('comp-container'); cc.innerHTML = '';
-        S.history.forEach(h => {
+        
+        S.history.forEach((h, idx) => {
           const row = document.createElement('div'); row.className = 'comp-row';
-          const ec = h.correct ? 'var(--green)' : 'var(--yellow)';
-          const expVal = SCENARIOS[S.task][S.scenario].queries[h.turn - 1].exp;
+          let expVal = 'block'; 
+          try { expVal = SCENARIOS[S.task][S.scenario].queries[idx].exp; } catch(e) {}
           row.innerHTML = `<span class="comp-lbl">T${h.turn}</span><span class="comp-badge hcd-${expVal}" style="background:${expVal === 'block' ? 'var(--red-dim)' : expVal === 'allow' ? 'var(--green-dim)' : 'var(--yellow-dim)'};">${expVal.toUpperCase()}</span><span class="comp-vs">vs</span><span class="comp-badge hcd-${h.decision}">${h.decision.toUpperCase()}</span><span class="comp-result">${h.correct ? '✅' : '❌'}</span>`;
           cc.appendChild(row);
         });
@@ -3470,11 +3502,14 @@
           S.done = true; S.status = 'complete';
           const ss = $('sess-status'); ss.className = 'status-pill sp-done'; ss.textContent = 'COMPLETE';
           btn.disabled = true;
-          S.completedEpisodes.push({ task: S.task, scenario: S.scenario, score: Math.floor(S.reward + 0.5), mode: 'manual', turns: S.history.slice(), timestamp: new Date().toLocaleTimeString() });
+          S.completedEpisodes.push({ task: S.task, scenario: S.scenario, score: Math.floor(S.reward + 0.5), mode: S.mode, turns: S.history.slice(), timestamp: new Date().toLocaleTimeString() });
           setTimeout(showFinal, 600);
         } else {
-          S.turn++; S.query = SCENARIOS[S.task][S.scenario].queries[S.turn - 1];
-          loadQuery(S.query);
+          S.turn++; 
+          if (S.mode !== 'custom') {
+            S.query = SCENARIOS[S.task][S.scenario].queries[S.turn - 1];
+            loadQuery(S.query);
+          }
         }
 
         // Reset form

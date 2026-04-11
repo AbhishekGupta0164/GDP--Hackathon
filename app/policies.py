@@ -239,14 +239,17 @@ def _try_decode(query: str) -> Optional[str]:
                 return decoded
         except: pass
         
-    # 4. Leetspeak (Basic)
-    leet_map = {'4':'a', '3':'e', '1':'i', '0':'o', '@':'a', '$':'s', '7':'t', '5':'s'}
-    if any(c in leet_map for c in q):
-        decoded = "".join(leet_map.get(c, c) for c in q.lower())
+    # 4. Leetspeak (Comprehensive)
+    leet_map = {'4':'a', '3':'e', '1':'i', '0':'o', '@':'a', '$':'s', '7':'t', '5':'s', '8':'b', '9':'g', 'v':'\/', 'w':'\/\/'}
+    q_lower = q.lower()
+    if any(c in leet_map for c in q_lower):
+        decoded = "".join(leet_map.get(c, c) for c in q_lower)
         # Check if leet-decoded string triggers more keywords
-        dangerous = ["bomb", "kill", "hack", "poison", "weapon", "jailbreak", "dan"]
-        if any(w in decoded for w in dangerous) and decoded != q.lower():
+        dangerous = ["bomb", "kill", "hack", "poison", "weapon", "jailbreak", "dan", "exploit", "bypass", "malware"]
+        if any(w in decoded for w in dangerous) and decoded != q_lower:
             return decoded
+
+    return None
 
     return None
 
