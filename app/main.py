@@ -139,6 +139,17 @@ def post_mcp():
 
 # ── Core OpenEnv Endpoints ────────────────────────────────────
 
+# Add these new endpoints (keep all existing ones)
+
+POST /api/audit          # Upload CSV + run full fairness audit
+GET  /api/tasks          # List available bias tasks
+POST /api/train          # Start PPO training (same as before)
+GET  /api/metrics/{run}  # Get fairness metrics for a run
+POST /api/mitigate       # Apply mitigation strategy
+GET  /api/report/{run}   # Download PDF/HTML report
+POST /api/gemini/explain # Get Gemini narrative explanation
+POST /api/counterfactual # Counterfactual analysis
+
 @app.post("/reset", tags=["openenv"])
 async def reset(request: Request):
     try:
