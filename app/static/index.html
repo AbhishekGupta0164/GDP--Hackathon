@@ -1,1681 +1,1614 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FairForge Arena — AI Fairness Training Gym</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="description" content="FairForge Arena: Measure, Flag and Fix algorithmic bias in AI models across hiring, loan, medical and intersectional domains.">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html { scroll-behavior: smooth; scroll-snap-type: y mandatory; overflow-y: scroll; }
-  body { font-family: 'Inter', sans-serif; background: #020617; color: #fff; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#07091a;--bg2:#0d1226;--surface:rgba(255,255,255,0.035);
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --indigo:#6366f1;--indigo2:#4f46e5;--purple:#8b5cf6;
+  --emerald:#10b981;--amber:#f59e0b;--red:#ef4444;--cyan:#06b6d4;
+  --sky:#38bdf8;
+  --text:#f1f5f9;--text2:#94a3b8;--text3:#475569;
+  --r:12px;--r2:8px;--r3:16px;
+  --sidebar:230px;--topbar:52px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif;background:var(--bg);color:var(--text)}
 
-  .slide {
-    min-height: 100vh;
-    scroll-snap-align: start;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    overflow: hidden;
-  }
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(99,102,241,.35);border-radius:4px}
 
-  .glass {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.08);
-    backdrop-filter: blur(12px);
-  }
+/* ── LAYOUT ── */
+#app{display:flex;flex-direction:column;height:100vh}
 
-  .glass-hover:hover {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(255,255,255,0.12);
-  }
+/* TOP BAR */
+#topbar{
+  height:var(--topbar);background:rgba(7,9,26,.9);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 20px;gap:16px;
+  backdrop-filter:blur(12px);flex-shrink:0;z-index:50;
+}
+.logo-mark{
+  width:32px;height:32px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,var(--indigo),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+}
+.logo-text{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-.3px}
+.logo-sub{font-size:10px;color:var(--text3);margin-top:1px}
+#topbar-run{
+  margin-left:auto;display:flex;align-items:center;gap:10px;
+  font-size:11px;color:var(--text2);
+}
+.run-badge{
+  background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.25);
+  color:var(--indigo);padding:3px 8px;border-radius:20px;
+  font-family:'JetBrains Mono',monospace;font-size:10px;
+}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);
+  box-shadow:0 0 6px var(--emerald);animation:pulse-glow 2s ease infinite}
+@keyframes pulse-glow{0%,100%{opacity:1}50%{opacity:.5}}
 
-  @keyframes globalFadeIn {
-    0% { opacity: 0; }
-    100% { opacity: 1; }
-  }
+/* MAIN ROW */
+#main-row{display:flex;flex:1;overflow:hidden}
 
-  @keyframes slideUp {
-    0% { opacity: 0; transform: translateY(40px); }
-    100% { opacity: 1; transform: translateY(0); }
-  }
+/* SIDEBAR */
+#sidebar{
+  width:var(--sidebar);flex-shrink:0;
+  background:rgba(7,9,26,.7);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  backdrop-filter:blur(8px);overflow-y:auto;overflow-x:hidden;
+}
+.sidebar-section{padding:4px 8px;margin-top:8px}
+.sidebar-label{font-size:9px;text-transform:uppercase;letter-spacing:.1em;
+  color:var(--text3);padding:6px 8px;font-weight:500}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 12px;border-radius:var(--r2);cursor:pointer;
+  transition:all .2s ease;color:var(--text2);font-size:12px;font-weight:500;
+  margin-bottom:2px;border:1px solid transparent;
+}
+.nav-item:hover{background:rgba(99,102,241,.08);color:var(--text);border-color:var(--border)}
+.nav-item.active{
+  background:rgba(99,102,241,.15);color:var(--indigo);
+  border-color:rgba(99,102,241,.25);
+}
+.nav-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;font-size:14px;
+  background:rgba(255,255,255,.04);transition:all .2s}
+.nav-item.active .nav-icon{background:rgba(99,102,241,.2)}
+.nav-badge{margin-left:auto;background:var(--red);color:#fff;
+  font-size:9px;padding:1px 5px;border-radius:10px;font-weight:600}
 
-  @keyframes slideLeft {
-    0% { opacity: 0; transform: translateX(60px); }
-    100% { opacity: 1; transform: translateX(0); }
-  }
+/* Domain buttons */
+.domain-btn{
+  display:flex;align-items:center;gap:8px;padding:7px 12px;
+  border-radius:var(--r2);cursor:pointer;color:var(--text3);
+  font-size:11px;transition:all .2s;
+}
+.domain-btn:hover{background:rgba(255,255,255,.04);color:var(--text2)}
+.domain-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
 
-  @keyframes slideRight {
-    0% { opacity: 0; transform: translateX(-60px); }
-    100% { opacity: 1; transform: translateX(0); }
-  }
+/* CONTENT */
+#content{flex:1;overflow-y:auto;overflow-x:hidden;position:relative}
+.tab-pane{display:none;padding:20px;min-height:100%;animation:fadeIn .3s ease}
+.tab-pane.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-  @keyframes scaleIn {
-    0% { opacity: 0; transform: scale(0.85); }
-    100% { opacity: 1; transform: scale(1); }
-  }
+/* ── COMMON COMPONENTS ── */
+.page-title{font-size:20px;font-weight:600;color:var(--text);margin-bottom:4px}
+.page-sub{font-size:12px;color:var(--text2);margin-bottom:20px}
 
-  @keyframes pulse-ring {
-    0% { transform: scale(1); opacity: 0.5; }
-    100% { transform: scale(1.8); opacity: 0; }
-  }
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r3);padding:16px;
+  transition:border-color .2s,box-shadow .2s;
+}
+.card:hover{border-color:var(--border2)}
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-12px); }
-  }
+.card-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;
+  color:var(--text3);margin-bottom:12px;font-weight:600}
 
-  @keyframes flowPulse {
-    0%, 100% { opacity: 0.4; }
-    50% { opacity: 1; }
-  }
+.grid{display:grid;gap:14px}
+.grid-2{grid-template-columns:repeat(2,1fr)}
+.grid-3{grid-template-columns:repeat(3,1fr)}
+.grid-4{grid-template-columns:repeat(4,1fr)}
 
-  @keyframes gradientShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-  }
+.metric-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r3);padding:16px;
+  transition:all .25s ease;position:relative;overflow:hidden;
+}
+.metric-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--indigo),var(--purple));opacity:0;
+  transition:opacity .3s;
+}
+.metric-card:hover{border-color:var(--border2);transform:translateY(-2px)}
+.metric-card:hover::before{opacity:1}
+.metric-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.metric-value{font-size:28px;font-weight:300;color:var(--text);font-family:'JetBrains Mono',monospace}
+.metric-status{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
+.status-pass{background:rgba(16,185,129,.12);color:var(--emerald);border:1px solid rgba(16,185,129,.2)}
+.status-fail{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.status-warn{background:rgba(245,158,11,.12);color:var(--amber);border:1px solid rgba(245,158,11,.2)}
 
-  @keyframes typewriter {
-    from { width: 0; }
-    to { width: 100%; }
-  }
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border-radius:var(--r2);border:none;cursor:pointer;
+  font-size:12px;font-weight:500;transition:all .2s;font-family:inherit;
+}
+.btn-primary{background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.25)}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0)}
+.btn-secondary{background:rgba(255,255,255,.06);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{background:rgba(255,255,255,.09);color:var(--text)}
+.btn-success{background:rgba(16,185,129,.15);color:var(--emerald);border:1px solid rgba(16,185,129,.25)}
+.btn-danger{background:rgba(239,68,68,.12);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
-  @keyframes blink {
-    50% { border-color: transparent; }
-  }
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:20px;font-size:10px;font-weight:600}
+.badge-pass{background:rgba(16,185,129,.12);color:var(--emerald)}
+.badge-fail{background:rgba(239,68,68,.12);color:var(--red)}
+.badge-warn{background:rgba(245,158,11,.12);color:var(--amber)}
+.badge-info{background:rgba(99,102,241,.12);color:var(--indigo)}
+.badge-critical{background:rgba(239,68,68,.15);color:#ff6b6b}
+.badge-high{background:rgba(245,158,11,.12);color:var(--amber)}
+.badge-medium{background:rgba(6,182,212,.1);color:var(--cyan)}
+.badge-low{background:rgba(16,185,129,.1);color:var(--emerald)}
 
-  @keyframes countUp {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
+input,select,textarea{
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  border-radius:var(--r2);color:var(--text);font-family:inherit;font-size:12px;
+  padding:8px 12px;outline:none;transition:border-color .2s;width:100%;
+}
+input:focus,select:focus{border-color:var(--indigo)}
+select option{background:#1e293b}
+label{font-size:11px;color:var(--text2);margin-bottom:4px;display:block}
 
-  @keyframes drawLine {
-    from { stroke-dashoffset: 1000; }
-    to { stroke-dashoffset: 0; }
-  }
+.form-group{margin-bottom:14px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
 
-  .animate-on-scroll {
-    opacity: 0;
-    transform: translateY(40px);
-    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  }
+.upload-zone{
+  border:1.5px dashed var(--border2);border-radius:var(--r3);
+  padding:32px;text-align:center;cursor:pointer;transition:all .3s;
+}
+.upload-zone:hover{border-color:var(--indigo);background:rgba(99,102,241,.04)}
+.upload-zone.drag-over{border-color:var(--indigo);background:rgba(99,102,241,.08)}
+.upload-zone-icon{font-size:32px;margin-bottom:8px}
+.upload-zone-text{font-size:13px;color:var(--text2)}
+.upload-zone-sub{font-size:11px;color:var(--text3);margin-top:4px}
 
-  .animate-on-scroll.visible {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.alert{padding:12px 14px;border-radius:var(--r2);font-size:12px;display:flex;align-items:flex-start;gap:8px;margin-bottom:14px}
+.alert-info{background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);color:var(--indigo)}
+.alert-warn{background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);color:var(--amber)}
+.alert-error{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:var(--red)}
+.alert-success{background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);color:var(--emerald)}
 
-  .hero-gradient {
-    background: linear-gradient(to bottom right, #d0d7fb, #716afb);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 12px;color:var(--text3);font-size:10px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);font-weight:600;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.03);color:var(--text2)}
+tr:hover td{background:rgba(255,255,255,.02)}
+tr:last-child td{border-bottom:none}
 
-  .accent-gradient {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
-    background-size: 200% 200%;
-    animation: gradientShift 4s ease infinite;
-  }
+.progress-bar{height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .8s ease}
 
-  .nav-dot {
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.1);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-  }
+.log-output{
+  background:rgba(0,0,0,.4);border:1px solid var(--border);border-radius:var(--r2);
+  padding:12px;font-family:'JetBrains Mono',monospace;font-size:10px;color:#4ade80;
+  height:200px;overflow-y:auto;white-space:pre;line-height:1.6;
+}
 
-  .nav-dot.active {
-    background: #6366f1;
-    border-color: #6366f1;
-    box-shadow: 0 0 12px rgba(99,102,241,0.5);
-  }
+/* Spinner */
+.spinner{width:16px;height:16px;border:2px solid rgba(99,102,241,.3);border-top-color:var(--indigo);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-  .nav-dot:hover {
-    background: rgba(99,102,241,0.5);
-    transform: scale(1.3);
-  }
+/* Heatmap cell */
+.hmap-cell{
+  display:flex;align-items:center;justify-content:center;
+  border-radius:6px;height:44px;font-size:11px;font-weight:600;
+  font-family:'JetBrains Mono',monospace;cursor:default;
+  transition:transform .2s;
+}
+.hmap-cell:hover{transform:scale(1.05)}
 
-  .nav-dot .tooltip {
-    position: absolute;
-    right: 22px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(15,23,42,0.95);
-    border: 1px solid rgba(255,255,255,0.1);
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 11px;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s;
-    color: #94a3b8;
-  }
+/* Gemini box */
+.gemini-box{
+  background:linear-gradient(135deg,rgba(99,102,241,.06),rgba(139,92,246,.06));
+  border:1px solid rgba(99,102,241,.15);border-radius:var(--r3);padding:16px;
+}
+.gemini-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.gemini-icon{width:28px;height:28px;border-radius:8px;
+  background:linear-gradient(135deg,var(--indigo),var(--purple));
+  display:flex;align-items:center;justify-content:center;font-size:14px}
+.gemini-text{font-size:12px;color:var(--text2);line-height:1.7;white-space:pre-line}
 
-  .nav-dot:hover .tooltip { opacity: 1; }
+/* Grade circle */
+.grade-circle{
+  width:100px;height:100px;border-radius:50%;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  font-size:42px;font-weight:300;border:3px solid;flex-shrink:0;
+}
 
-  .flow-box {
-    transition: all 0.3s ease;
-  }
-  .flow-box:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 25px rgba(99,102,241,0.2);
-    border-color: rgba(99,102,241,0.4);
-  }
+/* What-if profile */
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.decision-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;
+}
 
-  .arch-layer {
-    transition: all 0.4s ease;
-  }
-  .arch-layer:hover {
-    transform: scale(1.02);
-    border-color: rgba(99,102,241,0.4);
-  }
+/* Slider */
+input[type=range]{
+  -webkit-appearance:none;width:100%;height:4px;
+  background:var(--border2);border-radius:2px;border:none;padding:0;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--indigo);cursor:pointer;border:2px solid #fff;
+}
 
-  .tech-card {
-    transition: all 0.3s ease;
-  }
-  .tech-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(99,102,241,0.3);
-    background: rgba(255,255,255,0.05);
-  }
+/* Divider */
+.divider{height:1px;background:var(--border);margin:16px 0}
 
-  .screenshot-card {
-    transition: all 0.4s ease;
-  }
-  .screenshot-card:hover {
-    transform: scale(1.03);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.5);
-  }
+/* Empty state */
+.empty-state{text-align:center;padding:48px 20px;color:var(--text3)}
+.empty-state-icon{font-size:40px;margin-bottom:12px}
+.empty-state-text{font-size:13px;margin-bottom:4px;color:var(--text2)}
+.empty-state-sub{font-size:11px}
 
-  .stat-number {
-    font-variant-numeric: tabular-nums;
-  }
+/* Group result card */
+.group-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r2);padding:10px;text-align:center;
+  transition:all .2s;
+}
+.group-card:hover{border-color:var(--border2)}
 
-  ::-webkit-scrollbar { width: 4px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.3); border-radius: 2px; }
+/* Report score bar */
+.score-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.score-bar-label{font-size:11px;color:var(--text2);width:160px;flex-shrink:0}
+.score-bar-track{flex:1;height:8px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:4px;transition:width .9s ease}
+.score-bar-val{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text2);width:36px;text-align:right;flex-shrink:0}
 
-  .shimmer {
-    position: relative;
-    overflow: hidden;
-  }
-  .shimmer::after {
-    content: '';
-    position: absolute;
-    top: 0; left: -100%; width: 50%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent);
-    animation: shimmer 3s infinite;
-  }
-  @keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 200%; }
-  }
+/* Counter badge */
+.counter{font-size:24px;font-weight:300;font-family:'JetBrains Mono',monospace;color:var(--text)}
+.counter-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
 
-  .bg-glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(100px);
-    pointer-events: none;
-  }
+/* Violation row */
+.violation-row{
+  display:flex;align-items:flex-start;gap:10px;padding:10px;
+  border-radius:var(--r2);background:rgba(239,68,68,.05);
+  border:1px solid rgba(239,68,68,.1);margin-bottom:8px;
+}
+
+/* Sample buttons row */
+.sample-btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.sample-btn{
+  padding:5px 12px;border-radius:20px;font-size:10px;font-weight:600;cursor:pointer;
+  border:1px solid;transition:all .2s;background:transparent;font-family:inherit;
+}
+
+/* Mitigation card */
+.mitigation-card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--r3);padding:14px;margin-bottom:10px;
+  transition:border-color .2s;
+}
+.mitigation-card:hover{border-color:var(--border2)}
+.mitigation-card.selected{border-color:var(--indigo);background:rgba(99,102,241,.05)}
+
+/* Chart container */
+.chart-wrap{position:relative;width:100%}
+
+/* Loading overlay */
+#loading-overlay{
+  position:fixed;inset:0;background:rgba(7,9,26,.8);z-index:1000;
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;
+  backdrop-filter:blur(4px);
+}
+#loading-overlay.visible{display:flex}
+.loading-text{font-size:13px;color:var(--text2)}
+
+/* Toast */
+#toast{
+  position:fixed;bottom:20px;right:20px;z-index:1100;
+  background:rgba(22,30,52,.95);border:1px solid var(--border2);
+  border-radius:var(--r);padding:12px 16px;font-size:12px;
+  color:var(--text);backdrop-filter:blur(8px);
+  transform:translateY(20px);opacity:0;transition:all .3s;pointer-events:none;
+  max-width:300px;
+}
+#toast.show{transform:translateY(0);opacity:1}
 </style>
 </head>
 <body>
+<div id="app">
 
-<!-- Side Navigation -->
-<nav id="sideNav" class="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-3 items-center">
-  <div class="nav-dot active" data-slide="0"><span class="tooltip">Title</span></div>
-  <div class="nav-dot" data-slide="1"><span class="tooltip">Problem</span></div>
-  <div class="nav-dot" data-slide="2"><span class="tooltip">Solution</span></div>
-  <div class="nav-dot" data-slide="3"><span class="tooltip">Key Features</span></div>
-  <div class="nav-dot" data-slide="4"><span class="tooltip">Fairness Metrics</span></div>
-  <div class="nav-dot" data-slide="5"><span class="tooltip">RL Training</span></div>
-  <div class="nav-dot" data-slide="6"><span class="tooltip">XAI with Gemini</span></div>
-  <div class="nav-dot" data-slide="7"><span class="tooltip">Differentiation</span></div>
-  <div class="nav-dot" data-slide="8"><span class="tooltip">Workflow</span></div>
-  <div class="nav-dot" data-slide="9"><span class="tooltip">Architecture</span></div>
-  <div class="nav-dot" data-slide="10"><span class="tooltip">Tech Stack</span></div>
-  <div class="nav-dot" data-slide="11"><span class="tooltip">MVP Demo</span></div>
-  <div class="nav-dot" data-slide="12"><span class="tooltip">Roadmap</span></div>
-  <div class="nav-dot" data-slide="13"><span class="tooltip">Impact</span></div>
-  <div class="nav-dot" data-slide="14"><span class="tooltip">Team</span></div>
-  <div class="nav-dot" data-slide="15"><span class="tooltip">Thank You</span></div>
-</nav>
-
-<!-- ==================== SLIDE 1: TITLE ==================== -->
-<section class="slide" id="slide-0">
-  <div class="bg-glow w-[600px] h-[600px] bg-indigo-600/15 -top-40 -left-40 absolute"></div>
-  <div class="bg-glow w-[500px] h-[500px] bg-purple-600/10 bottom-0 right-0 absolute"></div>
-
-  <div class="text-center px-6 max-w-4xl mx-auto relative z-10">
-    <!-- Robot Icon -->
-    <div class="mx-auto mb-8 relative" style="animation: float 3s ease-in-out infinite;">
-      <div class="w-24 h-24 rounded-2xl accent-gradient flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
-        <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
-          <rect x="10" y="14" width="28" height="22" rx="4" fill="white" fill-opacity="0.9"/>
-          <circle cx="18" cy="24" r="3" fill="#4f46e5"/>
-          <circle cx="30" cy="24" r="3" fill="#4f46e5"/>
-          <rect x="18" y="30" width="12" height="2" rx="1" fill="#4f46e5" fill-opacity="0.6"/>
-          <line x1="24" y1="8" x2="24" y2="14" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <circle cx="24" cy="6" r="2" fill="white"/>
-          <line x1="10" y1="22" x2="6" y2="20" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <line x1="38" y1="22" x2="42" y2="20" stroke="white" stroke-width="2" stroke-linecap="round"/>
-          <rect x="14" y="36" width="6" height="6" rx="1" fill="white" fill-opacity="0.5"/>
-          <rect x="28" y="36" width="6" height="6" rx="1" fill="white" fill-opacity="0.5"/>
-        </svg>
-      </div>
-      <div class="absolute inset-0 w-24 h-24 rounded-2xl accent-gradient mx-auto" style="animation: pulse-ring 2s ease-out infinite; opacity: 0.3;"></div>
-    </div>
-
-    <div class="inline-block px-4 py-1.5 rounded-full glass text-xs text-indigo-300 font-medium tracking-wider uppercase mb-6">
-      H2S Hackathon 2026 • Unbiased AI Decision Track
-    </div>
-
-    <h1 class="text-5xl md:text-7xl font-extralight tracking-tight leading-[1.05] mb-6">
-      <span class="hero-gradient">FairForge</span>
-      <span class="text-white/90"> Arena</span>
-    </h1>
-
-    <p class="text-lg md:text-xl text-slate-400 font-light leading-relaxed max-w-2xl mx-auto mb-4">
-      The AI Fairness Training Gym That <span class="text-white font-normal">Measures</span>, <span class="text-white font-normal">Flags</span> & <span class="text-white font-normal">Fixes</span> Bias in Automated Decisions
-    </p>
-
-    <p class="text-sm text-indigo-300/70 italic mb-10">"Train AI to be Fair — Before it Impacts Real Lives"</p>
-
-    <div class="flex items-center justify-center gap-4 flex-wrap">
-      <a href="#slide-1" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium px-6 py-3 rounded-xl transition-all duration-150 shadow-lg shadow-indigo-500/20">
-        Explore the Problem <i data-lucide="arrow-down" class="w-4 h-4"></i>
-      </a>
-      <a href="#slide-11" class="inline-flex items-center gap-2 glass glass-hover text-slate-300 text-sm font-medium px-6 py-3 rounded-xl transition-all duration-150">
-        <i data-lucide="play" class="w-4 h-4"></i> Live Demo
-      </a>
-    </div>
-
-    <div class="mt-14 text-xs text-slate-600 tracking-widest uppercase">
-      Team MASSIVE-X
-    </div>
+<!-- ── TOP BAR ── -->
+<header id="topbar">
+  <div class="logo-mark">⚖</div>
+  <div>
+    <div class="logo-text">FairForge Arena</div>
+    <div class="logo-sub">AI Fairness Training Gym &nbsp;·&nbsp; v3.0</div>
   </div>
-</section>
+  <div id="topbar-run">
+    <span class="status-dot"></span>
+    <span id="run-label" style="display:none">Run:</span>
+    <span id="run-id-badge" class="run-badge" style="display:none"></span>
+    <span id="domain-badge" style="color:var(--text3)">No audit yet</span>
+  </div>
+</header>
 
-<!-- ==================== SLIDE 2: THE PROBLEM ==================== -->
-<section class="slide" id="slide-1">
-  <div class="bg-glow w-[500px] h-[500px] bg-red-600/8 top-20 right-0 absolute"></div>
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-medium tracking-wider uppercase mb-4">The Problem</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Life-Changing Decisions<br><span class="text-red-400/80">Shouldn't Be Biased</span></h2>
-    </div>
+<!-- ── MAIN ROW ── -->
+<div id="main-row">
 
-    <div class="grid md:grid-cols-2 gap-8 items-center">
-      <!-- Left: Problem Cards -->
-      <div class="space-y-4 animate-on-scroll">
-        <div class="glass rounded-2xl p-5 flex gap-4 items-start glass-hover transition-all duration-300">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <i data-lucide="briefcase" class="w-5 h-5 text-red-400"></i>
-          </div>
-          <div>
-            <h4 class="text-white text-sm font-medium mb-1">AI Decides Jobs, Loans, Medical Care</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Automated systems now make high-stakes decisions affecting millions of people daily — often without oversight.</p>
-          </div>
-        </div>
-
-        <div class="glass rounded-2xl p-5 flex gap-4 items-start glass-hover transition-all duration-300">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <i data-lucide="database" class="w-5 h-5 text-red-400"></i>
-          </div>
-          <div>
-            <h4 class="text-white text-sm font-medium mb-1">Flawed Historical Data → Amplified Discrimination</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Models trained on biased data don't just reproduce bias — they amplify and systematize it at scale.</p>
-          </div>
-        </div>
-
-        <div class="glass rounded-2xl p-5 flex gap-4 items-start glass-hover transition-all duration-300">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <i data-lucide="shield-alert" class="w-5 h-5 text-red-400"></i>
-          </div>
-          <div>
-            <h4 class="text-white text-sm font-medium mb-1">Protected Groups Suffer Hidden Unfairness</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Gender, race, age discrimination is often invisible in aggregate metrics but devastating at the individual level.</p>
-          </div>
-        </div>
-
-        <div class="glass rounded-2xl p-5 flex gap-4 items-start glass-hover transition-all duration-300">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-            <i data-lucide="wrench" class="w-5 h-5 text-red-400"></i>
-          </div>
-          <div>
-            <h4 class="text-white text-sm font-medium mb-1">No Accessible Tools to Measure, Flag & Fix</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Existing fairness toolkits require PhD-level expertise. Organizations are left guessing about their AI's fairness.</p>
-          </div>
-        </div>
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-section">
+    <div class="sidebar-label">Workspace</div>
+    <div class="nav-item active" data-tab="audit" id="nav-audit">
+      <div class="nav-icon">📊</div>
+      <div>
+        <div>Audit Dashboard</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">Upload & analyze</div>
       </div>
-
-      <!-- Right: Visual -->
-      <div class="animate-on-scroll relative">
-        <div class="glass rounded-2xl p-6 relative overflow-hidden">
-          <!-- Biased Flowchart -->
-          <div class="text-xs text-slate-500 uppercase tracking-wider mb-4 font-medium">Biased Decision Pipeline</div>
-          <div class="space-y-3">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center"><i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i></div>
-              <div class="flex-1 h-8 rounded-lg bg-slate-800/50 border border-slate-700/50 flex items-center px-3 text-xs text-slate-400">Historical Data (Biased)</div>
-            </div>
-            <div class="flex justify-center"><i data-lucide="arrow-down" class="w-4 h-4 text-red-500/50"></i></div>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center"><i data-lucide="brain" class="w-4 h-4 text-slate-400"></i></div>
-              <div class="flex-1 h-8 rounded-lg bg-slate-800/50 border border-slate-700/50 flex items-center px-3 text-xs text-slate-400">ML Model Training</div>
-            </div>
-            <div class="flex justify-center"><i data-lucide="arrow-down" class="w-4 h-4 text-red-500/50"></i></div>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center"><i data-lucide="zap" class="w-4 h-4 text-slate-400"></i></div>
-              <div class="flex-1 h-8 rounded-lg bg-slate-800/50 border border-red-500/30 flex items-center px-3 text-xs text-red-400">Biased Predictions</div>
-            </div>
-            <div class="flex justify-center"><i data-lucide="arrow-down" class="w-4 h-4 text-red-500/50"></i></div>
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center"><i data-lucide="x" class="w-4 h-4 text-red-500"></i></div>
-              <div class="flex-1 h-8 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center px-3 text-xs text-red-400 font-medium">Discrimination × 2.3x</div>
-            </div>
-          </div>
-
-          <!-- Affected Groups -->
-          <div class="mt-5 pt-4 border-t border-white/5">
-            <div class="text-xs text-slate-500 uppercase tracking-wider mb-3 font-medium">Affected Groups</div>
-            <div class="flex flex-wrap gap-2">
-              <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px]">Gender</span>
-              <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px]">Race</span>
-              <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px]">Age</span>
-              <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px]">Disability</span>
-              <span class="px-2.5 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[10px]">Socioeconomic</span>
-            </div>
-          </div>
-        </div>
+    </div>
+    <div class="nav-item" data-tab="heatmap" id="nav-heatmap">
+      <div class="nav-icon">🔥</div>
+      <div>
+        <div>Bias Heatmap</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">Group × metric grid</div>
+      </div>
+    </div>
+    <div class="nav-item" data-tab="training" id="nav-training">
+      <div class="nav-icon">🤖</div>
+      <div>
+        <div>RL Training</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">PPO debiasing</div>
+      </div>
+    </div>
+    <div class="nav-item" data-tab="policies" id="nav-policies">
+      <div class="nav-icon">📋</div>
+      <div>
+        <div>Policies</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">12 fairness rules</div>
+      </div>
+      <span class="nav-badge" id="policy-badge" style="display:none">0</span>
+    </div>
+    <div class="nav-item" data-tab="report" id="nav-report">
+      <div class="nav-icon">📝</div>
+      <div>
+        <div>Report Card</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">A–F grade + PDF</div>
+      </div>
+    </div>
+    <div class="nav-item" data-tab="mitigate" id="nav-mitigate">
+      <div class="nav-icon">🔧</div>
+      <div>
+        <div>Mitigate</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">Fix bias strategies</div>
+      </div>
+    </div>
+    <div class="nav-item" data-tab="whatif" id="nav-whatif">
+      <div class="nav-icon">🔮</div>
+      <div>
+        <div>What-If</div>
+        <div style="font-size:9px;color:var(--text3);margin-top:1px">Counterfactual XAI</div>
       </div>
     </div>
   </div>
-</section>
 
-<!-- ==================== SLIDE 3: THE SOLUTION ==================== -->
-<section class="slide" id="slide-2">
-  <div class="bg-glow w-[600px] h-[600px] bg-indigo-600/12 -bottom-40 left-1/2 -translate-x-1/2 absolute"></div>
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">The Solution</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">FairForge Arena<br><span class="text-indigo-400/80">Train Fairness, Not Just Detect It</span></h2>
-      <p class="text-slate-500 text-sm mt-4 max-w-xl mx-auto">An interactive gymnasium where AI models are stress-tested, debiased via reinforcement learning, and explained through generative XAI — all in one platform.</p>
+  <div class="sidebar-section" style="margin-top:auto;padding-bottom:12px">
+    <div class="sidebar-label">Quick Load</div>
+    <div class="domain-btn" onclick="loadSample('hiring')" title="Load hiring sample dataset">
+      <div class="domain-dot" style="background:#6366f1"></div> Hiring Dataset
     </div>
-
-    <div class="grid md:grid-cols-3 gap-5 animate-on-scroll">
-      <div class="glass rounded-2xl p-6 glass-hover transition-all duration-300 shimmer relative overflow-hidden">
-        <div class="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-4">
-          <i data-lucide="scan-search" class="w-6 h-6 text-indigo-400"></i>
-        </div>
-        <h3 class="text-white text-base font-medium mb-2">Measure</h3>
-        <p class="text-slate-500 text-xs leading-relaxed">Upload your model or dataset. Get instant fairness metrics — DI, SPD, EOD, PP parity — across all protected attributes.</p>
-      </div>
-
-      <div class="glass rounded-2xl p-6 glass-hover transition-all duration-300 shimmer relative overflow-hidden">
-        <div class="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center mb-4">
-          <i data-lucide="flag-triangle-right" class="w-6 h-6 text-amber-400"></i>
-        </div>
-        <h3 class="text-white text-base font-medium mb-2">Flag</h3>
-        <p class="text-slate-500 text-xs leading-relaxed">Automatically flag biased decision boundaries with intersectional heatmaps and group-level disparity scores.</p>
-      </div>
-
-      <div class="glass rounded-2xl p-6 glass-hover transition-all duration-300 shimmer relative overflow-hidden">
-        <div class="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center mb-4">
-          <i data-lucide="dumbbell" class="w-6 h-6 text-emerald-400"></i>
-        </div>
-        <h3 class="text-white text-base font-medium mb-2">Fix (RL Training)</h3>
-        <p class="text-slate-500 text-xs leading-relaxed">Don't just patch — retrain. PPO-based reinforcement learning penalizes unfairness while preserving accuracy.</p>
-      </div>
+    <div class="domain-btn" onclick="loadSample('loan')" title="Load loan sample dataset">
+      <div class="domain-dot" style="background:#10b981"></div> Loan Dataset
     </div>
-
-    <div class="mt-8 glass rounded-2xl p-5 animate-on-scroll text-center">
-      <div class="flex items-center justify-center gap-2 text-sm text-indigo-300">
-        <i data-lucide="sparkles" class="w-4 h-4"></i>
-        <span class="font-medium">Plus: Gemini-powered Explainability</span>
-      </div>
-      <p class="text-slate-500 text-xs mt-1">Chat with your model's bias report. Get plain-English explanations of why decisions are unfair and how to fix them.</p>
+    <div class="domain-btn" onclick="loadSample('medical')" title="Load medical sample dataset">
+      <div class="domain-dot" style="background:#f59e0b"></div> Medical Dataset
+    </div>
+    <div class="domain-btn" onclick="loadSample('intersectional')" title="Load intersectional dataset">
+      <div class="domain-dot" style="background:#ef4444"></div> Intersectional
     </div>
   </div>
-</section>
+</aside>
 
-<!-- ==================== SLIDE 4: KEY FEATURES ==================== -->
-<section class="slide" id="slide-3">
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Features</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Everything You Need<br><span class="text-slate-500">In One Platform</span></h2>
-    </div>
+<!-- CONTENT -->
+<main id="content">
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 animate-on-scroll">
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-500/20 transition-colors">
-          <i data-lucide="upload" class="w-5 h-5 text-indigo-400"></i>
+<!-- ══════════════════════════════ TAB 1: AUDIT ══════════════════════════════ -->
+<div class="tab-pane active" id="tab-audit">
+  <div class="page-title">Audit Dashboard</div>
+  <div class="page-sub">Upload a CSV dataset to run the full fairness audit pipeline</div>
+
+  <!-- Upload Card -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">📁 Dataset Upload</div>
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <div style="flex:2;min-width:240px">
+        <div id="drop-zone" class="upload-zone" onclick="document.getElementById('csv-file').click()">
+          <div class="upload-zone-icon">📂</div>
+          <div class="upload-zone-text" id="drop-text">Drop CSV file here or click to browse</div>
+          <div class="upload-zone-sub" id="drop-sub">Hiring, loan, medical, intersectional datasets</div>
         </div>
-        <h4 class="text-white text-xs font-medium mb-1">Smart Upload</h4>
-        <p class="text-slate-600 text-[10px]">Auto-detect schema & protected attrs</p>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="onFileSelected(this)">
       </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-500/20 transition-colors">
-          <i data-lucide="bar-chart-3" class="w-5 h-5 text-indigo-400"></i>
+      <div style="flex:1;min-width:200px">
+        <div class="form-group">
+          <label>Domain</label>
+          <select id="domain-select">
+            <option value="hiring">💼 Hiring</option>
+            <option value="loan">🏦 Loan / Finance</option>
+            <option value="medical">🏥 Medical</option>
+            <option value="intersectional">♾ Intersectional</option>
+          </select>
         </div>
-        <h4 class="text-white text-xs font-medium mb-1">Fairness Dashboard</h4>
-        <p class="text-slate-600 text-[10px]">Real-time metrics & visualizations</p>
-      </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-500/20 transition-colors">
-          <i data-lucide="grid-3x3" class="w-5 h-5 text-indigo-400"></i>
+        <div class="form-group">
+          <label>Sensitive Columns <span style="color:var(--text3)">(comma-separated)</span></label>
+          <input type="text" id="sensitive-cols" value="gender,race" placeholder="gender,race,age_group">
         </div>
-        <h4 class="text-white text-xs font-medium mb-1">Intersectional Heatmap</h4>
-        <p class="text-slate-600 text-[10px]">Cross-group bias mapping</p>
-      </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-indigo-500/20 transition-colors">
-          <i data-lucide="shield-check" class="w-5 h-5 text-indigo-400"></i>
+        <div class="form-group">
+          <label>Target Column <span style="color:var(--text3)">(leave blank = last col)</span></label>
+          <input type="text" id="target-col" placeholder="hired / approved / high_risk">
         </div>
-        <h4 class="text-white text-xs font-medium mb-1">Stress Testing</h4>
-        <p class="text-slate-600 text-[10px]">Adversarial fairness probes</p>
-      </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-emerald-500/20 transition-colors">
-          <i data-lucide="brain-circuit" class="w-5 h-5 text-emerald-400"></i>
-        </div>
-        <h4 class="text-white text-xs font-medium mb-1">PPO RL Training</h4>
-        <p class="text-slate-600 text-[10px]">Train fairness into the model</p>
-      </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-purple-500/20 transition-colors">
-          <i data-lucide="message-square" class="w-5 h-5 text-purple-400"></i>
-        </div>
-        <h4 class="text-white text-xs font-medium mb-1">Gemini XAI Chat</h4>
-        <p class="text-slate-600 text-[10px]">Plain-English bias explanations</p>
-      </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-amber-500/20 transition-colors">
-          <i data-lucide="line-chart" class="w-5 h-5 text-amber-400"></i>
-        </div>
-        <h4 class="text-white text-xs font-medium mb-1">Training Curves</h4>
-        <p class="text-slate-600 text-[10px]">Live reward & fairness plots</p>
-      </div>
-
-      <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 text-center group">
-        <div class="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center mx-auto mb-3 group-hover:bg-sky-500/20 transition-colors">
-          <i data-lucide="file-down" class="w-5 h-5 text-sky-400"></i>
-        </div>
-        <h4 class="text-white text-xs font-medium mb-1">PDF Report Export</h4>
-        <p class="text-slate-600 text-[10px]">Audit-ready compliance docs</p>
+        <button class="btn btn-primary" style="width:100%" id="audit-btn" onclick="runAudit()">
+          <span id="audit-btn-icon">⚡</span> <span id="audit-btn-text">Run Fairness Audit</span>
+        </button>
       </div>
     </div>
   </div>
-</section>
 
-<!-- ==================== SLIDE 5: FAIRNESS METRICS ==================== -->
-<section class="slide" id="slide-4">
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Fairness Metrics</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Rigorous, Standard<br><span class="text-indigo-400/80">Bias Measurement</span></h2>
+  <!-- Results (hidden until audit) -->
+  <div id="audit-results" style="display:none">
+    <!-- 4 Metric Cards -->
+    <div class="grid grid-4" style="margin-bottom:14px" id="metric-cards"></div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-2" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-title">📈 Audit Score Breakdown</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-grader"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 Fairness Metrics</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="chart-metrics"></canvas></div>
+      </div>
     </div>
 
-    <div class="grid md:grid-cols-2 gap-6 animate-on-scroll">
-      <!-- Metric Cards -->
-      <div class="space-y-3">
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-indigo-500"></div>
-              <span class="text-white text-sm font-medium">Disparate Impact (DI)</span>
-            </div>
-            <span class="text-[10px] text-slate-600 font-mono">≥ 0.80 = Fair</span>
+    <!-- Violations + Gemini -->
+    <div class="grid grid-2" style="margin-bottom:14px">
+      <div class="card">
+        <div class="card-title">🚨 Policy Violations</div>
+        <div id="violations-list"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✨ Gemini AI Narrative</div>
+        <div class="gemini-box">
+          <div class="gemini-header">
+            <div class="gemini-icon">✦</div>
+            <span style="font-size:12px;font-weight:500">Gemini 1.5 Flash</span>
+            <span style="margin-left:auto;font-size:9px;color:var(--emerald)">● LIVE</span>
           </div>
-          <p class="text-slate-500 text-xs ml-4">Ratio of favorable outcome rates between unprivileged and privileged groups. The 80% rule from EEOC guidelines.</p>
-          <div class="mt-2 ml-4 h-2 rounded-full bg-slate-800 overflow-hidden">
-            <div class="h-full rounded-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500" style="width: 65%"></div>
-          </div>
-          <div class="flex justify-between mt-1 ml-4 text-[9px] text-slate-600">
-            <span>0.0 (Severe)</span><span>0.8 (Fair)</span><span>1.0 (Perfect)</span>
-          </div>
-        </div>
-
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-purple-500"></div>
-              <span class="text-white text-sm font-medium">Statistical Parity Difference</span>
-            </div>
-            <span class="text-[10px] text-slate-600 font-mono">≈ 0.0 = Fair</span>
-          </div>
-          <p class="text-slate-500 text-xs ml-4">Absolute difference in selection rates. Measures overall representation equity across groups.</p>
-        </div>
-
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-center justify-between mb-2">
-            <div class="flex items-center gap-2">
-              <div class="w-2 h-2 rounded-full bg-amber-500"></div>
-              <span class="text-white text-sm font-medium">Equal Opportunity Difference</span>
-            </div>
-            <span class="text-[10px] text-slate-600 font-mono">≈ 0.0 = Fair</span>
-          </div>
-          <p class="text-slate-500 text-xs ml-4">Difference in true positive rates. Ensures equally qualified individuals get equal positive outcomes.</p>
+          <div class="gemini-text" id="gemini-narrative" style="font-size:11px;line-height:1.7">Awaiting audit...</div>
         </div>
       </div>
+    </div>
 
-      <!-- Visual: Sample Dashboard -->
-      <div class="glass rounded-2xl p-5 relative overflow-hidden">
-        <div class="text-xs text-slate-500 uppercase tracking-wider mb-4 font-medium">Sample Audit Output</div>
-        
-        <!-- Mini heatmap -->
-        <div class="mb-5">
-          <div class="text-[10px] text-slate-600 mb-2 uppercase tracking-wider">Intersectional Heatmap: Gender × Race</div>
-          <div class="grid grid-cols-4 gap-1">
-            <div class="h-12 rounded bg-emerald-500/30 flex items-center justify-center text-[9px] text-emerald-300">0.92</div>
-            <div class="h-12 rounded bg-amber-500/40 flex items-center justify-center text-[9px] text-amber-300">0.68</div>
-            <div class="h-12 rounded bg-red-500/40 flex items-center justify-center text-[9px] text-red-300">0.54</div>
-            <div class="h-12 rounded bg-red-500/50 flex items-center justify-center text-[9px] text-red-300">0.41</div>
-            <div class="h-12 rounded bg-emerald-500/20 flex items-center justify-center text-[9px] text-emerald-300">0.88</div>
-            <div class="h-12 rounded bg-emerald-500/30 flex items-center justify-center text-[9px] text-emerald-300">0.81</div>
-            <div class="h-12 rounded bg-amber-500/30 flex items-center justify-center text-[9px] text-amber-300">0.72</div>
-            <div class="h-12 rounded bg-amber-500/40 flex items-center justify-center text-[9px] text-amber-300">0.63</div>
-          </div>
-          <div class="grid grid-cols-4 gap-1 mt-1">
-            <div class="text-[8px] text-slate-600 text-center">M×W</div>
-            <div class="text-[8px] text-slate-600 text-center">M×B</div>
-            <div class="text-[8px] text-slate-600 text-center">M×H</div>
-            <div class="text-[8px] text-slate-600 text-center">M×A</div>
-            <div class="text-[8px] text-slate-600 text-center">F×W</div>
-            <div class="text-[8px] text-slate-600 text-center">F×B</div>
-            <div class="text-[8px] text-slate-600 text-center">F×H</div>
-            <div class="text-[8px] text-slate-600 text-center">F×A</div>
-          </div>
+    <!-- Bias injected info -->
+    <div class="card" id="bias-info-card">
+      <div class="card-title">🎯 Adversary Bias Injected</div>
+      <div id="bias-info" style="font-size:12px;color:var(--text2)"></div>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div id="audit-empty" class="empty-state" style="margin-top:40px">
+    <div class="empty-state-icon">⚖</div>
+    <div class="empty-state-text">No audit run yet</div>
+    <div class="empty-state-sub">Upload a CSV above or use Quick Load in the sidebar</div>
+    <div class="sample-btns" style="justify-content:center;margin-top:16px">
+      <button class="sample-btn" onclick="loadSample('hiring')" style="color:var(--indigo);border-color:rgba(99,102,241,.3)">💼 Hiring</button>
+      <button class="sample-btn" onclick="loadSample('loan')" style="color:var(--emerald);border-color:rgba(16,185,129,.3)">🏦 Loan</button>
+      <button class="sample-btn" onclick="loadSample('medical')" style="color:var(--amber);border-color:rgba(245,158,11,.3)">🏥 Medical</button>
+      <button class="sample-btn" onclick="loadSample('intersectional')" style="color:var(--red);border-color:rgba(239,68,68,.3)">♾ Intersectional</button>
+    </div>
+  </div>
+</div><!-- end tab-audit -->
+
+<!-- ══════════════════════════════ TAB 2: HEATMAP ══════════════════════════════ -->
+<div class="tab-pane" id="tab-heatmap">
+  <div class="page-title">Bias Heatmap</div>
+  <div class="page-sub">Cross-group fairness visualization — 8 demographic groups × 4 metrics</div>
+
+  <div id="heatmap-empty" class="empty-state">
+    <div class="empty-state-icon">🔥</div>
+    <div class="empty-state-text">Run an audit first to see the heatmap</div>
+    <div class="empty-state-sub">The heatmap shows per-group fairness scores across demographic intersections</div>
+    <button class="btn btn-secondary" style="margin-top:12px" onclick="switchTab('audit')">→ Go to Audit Tab</button>
+  </div>
+
+  <div id="heatmap-content" style="display:none">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">Acceptance Rate by Demographic Group</div>
+      <div style="margin-bottom:8px;font-size:11px;color:var(--text3)">
+        🟢 &gt;70% &nbsp;&nbsp; 🟡 50–70% &nbsp;&nbsp; 🔴 &lt;50% &nbsp;&nbsp; Colors show deviation from group mean
+      </div>
+      <!-- Heatmap header -->
+      <div id="hmap-header" style="display:grid;gap:6px;margin-bottom:6px"></div>
+      <!-- Heatmap grid -->
+      <div id="hmap-grid" style="display:grid;gap:6px"></div>
+    </div>
+
+    <div class="grid grid-2">
+      <div class="card">
+        <div class="card-title">📊 Acceptance Rate per Group</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="chart-heatmap-bar"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📉 TPR vs FPR by Group</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="chart-tpr-fpr"></canvas></div>
+      </div>
+    </div>
+  </div>
+</div><!-- end tab-heatmap -->
+
+<!-- ══════════════════════════════ TAB 3: TRAINING ══════════════════════════════ -->
+<div class="tab-pane" id="tab-training">
+  <div class="page-title">RL Training</div>
+  <div class="page-sub">PPO-based reinforcement learning to reduce bias while preserving accuracy</div>
+
+  <!-- Controls -->
+  <div class="card" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <div>
+        <label>Episodes</label>
+        <input type="number" id="train-episodes" value="50" min="10" max="200" style="width:80px;margin-top:4px">
+      </div>
+      <div style="margin-top:18px;display:flex;gap:8px">
+        <button class="btn btn-primary" id="train-btn" onclick="startTraining()">▶ Start PPO Training</button>
+        <button class="btn btn-secondary" onclick="resetTraining()">↺ Reset</button>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:16px;margin-top:4px">
+        <div style="text-align:center">
+          <div class="counter" id="ep-counter">—</div>
+          <div class="counter-label">Episode</div>
         </div>
-
-        <!-- Metric bars -->
-        <div class="space-y-3">
-          <div>
-            <div class="flex justify-between text-[10px] mb-1">
-              <span class="text-slate-400">Disparate Impact</span>
-              <span class="text-red-400 font-mono">0.54</span>
-            </div>
-            <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-red-500" style="width:54%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-[10px] mb-1">
-              <span class="text-slate-400">Statistical Parity</span>
-              <span class="text-amber-400 font-mono">0.23</span>
-            </div>
-            <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-amber-500" style="width:77%"></div></div>
-          </div>
-          <div>
-            <div class="flex justify-between text-[10px] mb-1">
-              <span class="text-slate-400">Equal Opportunity</span>
-              <span class="text-amber-400 font-mono">0.18</span>
-            </div>
-            <div class="h-1.5 rounded-full bg-slate-800"><div class="h-full rounded-full bg-amber-500" style="width:68%"></div></div>
-          </div>
+        <div style="text-align:center">
+          <div class="counter" id="reward-counter" style="color:var(--emerald)">—</div>
+          <div class="counter-label">Reward</div>
         </div>
-
-        <div class="mt-4 p-2 rounded-lg bg-red-500/10 border border-red-500/20">
-          <div class="flex items-center gap-2 text-[10px] text-red-400">
-            <i data-lucide="alert-triangle" class="w-3 h-3"></i>
-            <span class="font-medium">3 fairness violations detected</span>
-          </div>
+        <div style="text-align:center">
+          <div class="counter" id="bias-counter" style="color:var(--red)">—</div>
+          <div class="counter-label">Bias Score</div>
         </div>
       </div>
     </div>
   </div>
-</section>
 
-<!-- ==================== SLIDE 6: RL TRAINING ==================== -->
-<section class="slide" id="slide-5">
-  <div class="bg-glow w-[500px] h-[500px] bg-emerald-600/10 top-10 left-0 absolute"></div>
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium tracking-wider uppercase mb-4">Core Innovation</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Reinforcement Learning<br><span class="text-emerald-400/80">That Trains Fairness In</span></h2>
-      <p class="text-slate-500 text-sm mt-4 max-w-2xl mx-auto">Unlike post-hoc bias mitigation, FairForge uses PPO to retrain the model's decision policy itself — rewarding accuracy while penalizing unfairness.</p>
+  <!-- Progress -->
+  <div class="card" style="margin-bottom:14px" id="train-progress-card" style="display:none">
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:11px">
+      <span style="color:var(--text3)">Training progress</span>
+      <span id="train-progress-text" style="color:var(--text2);font-family:'JetBrains Mono',monospace">0 / 0</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="train-progress-fill" style="width:0%;background:linear-gradient(90deg,var(--indigo),var(--purple))"></div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="grid grid-2" style="margin-bottom:14px">
+    <div class="card">
+      <div class="card-title">📈 Reward over Episodes</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-reward"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">📉 Bias Score over Episodes</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chart-bias-train"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Before/After -->
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-title">⚖ Before vs After PPO Training</div>
+    <div class="chart-wrap" style="height:200px"><canvas id="chart-before-after"></canvas></div>
+  </div>
+
+  <!-- Log -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="card-title" style="margin-bottom:0">🖥 Training Log</div>
+      <button class="btn btn-secondary btn-sm" onclick="document.getElementById('training-log').innerHTML=''">Clear</button>
+    </div>
+    <div class="log-output" id="training-log">Waiting for training to start...\n</div>
+  </div>
+</div><!-- end tab-training -->
+
+<!-- ══════════════════════════════ TAB 4: POLICIES ══════════════════════════════ -->
+<div class="tab-pane" id="tab-policies">
+  <div class="page-title">Fairness Policies</div>
+  <div class="page-sub">12 legal and ethical fairness rules checked against your model</div>
+
+  <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
+    <select id="policy-filter-domain" onchange="filterPolicies()" style="width:140px">
+      <option value="all">All Domains</option>
+      <option value="hiring">Hiring</option>
+      <option value="finance">Finance</option>
+      <option value="medical">Medical</option>
+    </select>
+    <select id="policy-filter-status" onchange="filterPolicies()" style="width:130px">
+      <option value="all">All Status</option>
+      <option value="fail">Failing Only</option>
+      <option value="pass">Passing Only</option>
+    </select>
+    <div style="margin-left:auto;font-size:11px;color:var(--text3)" id="policy-summary">Load an audit to check policies</div>
+  </div>
+
+  <div class="card">
+    <table id="policies-table">
+      <thead>
+        <tr>
+          <th>ID</th><th>Policy Name</th><th>Domain</th><th>Severity</th>
+          <th>Metric Value</th><th>Threshold</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="policies-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text3)">Run an audit to see policy results</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div><!-- end tab-policies -->
+
+<!-- ══════════════════════════════ TAB 5: REPORT CARD ══════════════════════════════ -->
+<div class="tab-pane" id="tab-report">
+  <div class="page-title">Report Card</div>
+  <div class="page-sub">Full fairness audit report with letter grade and compliance summary</div>
+
+  <div id="report-empty" class="empty-state">
+    <div class="empty-state-icon">📝</div>
+    <div class="empty-state-text">No report generated yet</div>
+    <div class="empty-state-sub">Run an audit to generate the fairness report card</div>
+    <button class="btn btn-secondary" style="margin-top:12px" onclick="switchTab('audit')">→ Go to Audit</button>
+  </div>
+
+  <div id="report-content" style="display:none">
+    <div class="grid grid-2" style="margin-bottom:14px">
+      <!-- Grade card -->
+      <div class="card" style="display:flex;align-items:center;gap:20px">
+        <div class="grade-circle" id="grade-circle">—</div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Overall Score</div>
+          <div style="font-size:36px;font-weight:300;font-family:'JetBrains Mono',monospace" id="report-score">—</div>
+          <div style="font-size:11px;margin-top:6px" id="report-verdict"></div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-primary btn-sm" onclick="exportPDF()">⬇ Export PDF Report</button>
+            <button class="btn btn-secondary btn-sm" onclick="loadReport()">↻ Refresh</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Score breakdown -->
+      <div class="card">
+        <div class="card-title">📊 Score Breakdown (Radar)</div>
+        <div class="chart-wrap" style="height:180px"><canvas id="chart-radar"></canvas></div>
+      </div>
     </div>
 
-    <div class="grid md:grid-cols-3 gap-5 animate-on-scroll">
-      <!-- Step 1 -->
-      <div class="glass rounded-2xl p-5 glass-hover transition-all duration-300">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold">1</div>
-          <h4 class="text-white text-sm font-medium">Custom OpenAI Gym Env</h4>
-        </div>
-        <p class="text-slate-500 text-xs leading-relaxed mb-3">We wrap your classification model in a Gymnasium-compatible environment where each "step" is a batch of predictions.</p>
-        <div class="p-2 rounded-lg bg-slate-900/50 font-mono text-[10px] text-emerald-400/70 space-y-0.5">
-          <div>env = FairnessEnv(model, data)</div>
-          <div>obs = env.reset()</div>
-          <div>action = policy(obs)</div>
-          <div>obs, reward, done, info = env.step(action)</div>
-        </div>
-      </div>
+    <!-- Score bars -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">Sub-scores</div>
+      <div id="report-score-bars"></div>
+    </div>
 
-      <!-- Step 2 -->
-      <div class="glass rounded-2xl p-5 glass-hover transition-all duration-300">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold">2</div>
-          <h4 class="text-white text-sm font-medium">Dual-Objective Reward</h4>
+    <!-- Gemini narrative -->
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title">✨ AI Audit Narrative</div>
+      <div class="gemini-box">
+        <div class="gemini-header">
+          <div class="gemini-icon">✦</div>
+          <span style="font-size:12px;font-weight:500">Gemini 1.5 Flash — Executive Summary</span>
         </div>
-        <p class="text-slate-500 text-xs leading-relaxed mb-3">The reward function balances prediction accuracy with a fairness penalty — creating a Pareto-optimal trade-off.</p>
-        <div class="p-2 rounded-lg bg-slate-900/50 font-mono text-[10px] text-emerald-400/70">
-          <div>R = α · accuracy</div>
-          <div>&nbsp;&nbsp;- β · |DI - 1.0|</div>
-          <div>&nbsp;&nbsp;- γ · SPD</div>
-        </div>
-      </div>
-
-      <!-- Step 3 -->
-      <div class="glass rounded-2xl p-5 glass-hover transition-all duration-300">
-        <div class="flex items-center gap-3 mb-4">
-          <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 text-xs font-bold">3</div>
-          <h4 class="text-white text-sm font-medium">PPO Policy Optimization</h4>
-        </div>
-        <p class="text-slate-500 text-xs leading-relaxed mb-3">Stable-Baselines3 PPO agent learns to adjust prediction thresholds per group, converging to a fair policy.</p>
-        <div class="p-2 rounded-lg bg-slate-900/50 font-mono text-[10px] text-emerald-400/70">
-          <div>model = PPO("MlpPolicy", env)</div>
-          <div>model.learn(total_timesteps=50k)</div>
-        </div>
+        <div class="gemini-text" id="report-narrative" style="font-size:12px;line-height:1.8"></div>
       </div>
     </div>
 
-    <!-- Result visualization -->
-    <div class="mt-8 glass rounded-2xl p-5 animate-on-scroll">
-      <div class="flex items-center justify-between mb-4">
-        <div class="text-xs text-slate-500 uppercase tracking-wider font-medium">Training Outcome (Sample)</div>
-        <div class="flex items-center gap-3 text-[10px]">
-          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-500"></span> Before</span>
-          <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> After PPO</span>
+    <!-- Print version (hidden, used for PDF) -->
+    <div id="print-area" style="display:none">
+      <h1 style="color:#1e293b">FairForge Arena — Fairness Audit Report</h1>
+      <p id="print-meta" style="color:#64748b;font-size:14px"></p>
+      <hr>
+      <h2 id="print-grade-text" style="color:#4f46e5"></h2>
+      <pre id="print-narrative" style="white-space:pre-wrap;font-family:sans-serif;color:#334155;font-size:13px;line-height:1.7"></pre>
+    </div>
+  </div>
+</div><!-- end tab-report -->
+
+<!-- ══════════════════════════════ TAB 6: MITIGATE ══════════════════════════════ -->
+<div class="tab-pane" id="tab-mitigate">
+  <div class="page-title">Mitigation Engine</div>
+  <div class="page-sub">Apply bias-fixing strategies and see projected improvement</div>
+
+  <div id="mitigate-empty" class="empty-state">
+    <div class="empty-state-icon">🔧</div>
+    <div class="empty-state-text">No suggestions yet</div>
+    <div class="empty-state-sub">Run an audit to generate tailored mitigation strategies</div>
+    <button class="btn btn-secondary" style="margin-top:12px" onclick="switchTab('audit')">→ Run Audit</button>
+  </div>
+
+  <div id="mitigate-content" style="display:none">
+    <div class="grid grid-2" style="margin-bottom:14px">
+      <div>
+        <div class="card" style="margin-bottom:10px">
+          <div class="card-title">🎯 Mitigation Strategy</div>
+          <div class="form-group">
+            <label>Strategy</label>
+            <select id="strategy-select">
+              <option value="reweighting">Sample Reweighting</option>
+              <option value="threshold_adjustment">Threshold Adjustment</option>
+              <option value="proxy_removal">Proxy Feature Removal</option>
+              <option value="adversarial_debiasing">Adversarial Debiasing</option>
+              <option value="calibration">Calibration by Group</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Strength: <span id="strength-val">0.7</span></label>
+            <input type="range" id="strength-slider" min="0.1" max="1.0" step="0.1" value="0.7"
+              oninput="document.getElementById('strength-val').textContent=this.value">
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="applyMitigation()" id="mitigate-btn">
+            ⚡ Apply Mitigation
+          </button>
+        </div>
+
+        <div class="card">
+          <div class="card-title">💡 Recommended Strategies</div>
+          <div id="suggestions-list"></div>
         </div>
       </div>
-      <div class="grid grid-cols-3 gap-4">
-        <div class="text-center">
-          <div class="text-2xl font-light text-white stat-number">0.54 → <span class="text-emerald-400">0.89</span></div>
-          <div class="text-[10px] text-slate-500 mt-1">Disparate Impact</div>
+
+      <div>
+        <div class="card" style="margin-bottom:14px" id="mitigation-results" style="display:none">
+          <div class="card-title">📊 Before vs After Mitigation</div>
+          <div class="chart-wrap" style="height:220px"><canvas id="chart-mitigate"></canvas></div>
         </div>
-        <div class="text-center">
-          <div class="text-2xl font-light text-white stat-number">0.23 → <span class="text-emerald-400">0.04</span></div>
-          <div class="text-[10px] text-slate-500 mt-1">Statistical Parity Diff</div>
-        </div>
-        <div class="text-center">
-          <div class="text-2xl font-light text-white stat-number">87% → <span class="text-emerald-400">84%</span></div>
-          <div class="text-[10px] text-slate-500 mt-1">Accuracy (minimal drop)</div>
+        <div class="card" id="mitigation-metrics-card" style="display:none">
+          <div class="card-title">📉 Metric Changes</div>
+          <div id="mitigation-metrics-table"></div>
         </div>
       </div>
     </div>
   </div>
-</section>
+</div><!-- end tab-mitigate -->
 
-<!-- ==================== SLIDE 7: XAI WITH GEMINI ==================== -->
-<section class="slide" id="slide-6">
-  <div class="bg-glow w-[500px] h-[500px] bg-purple-600/10 bottom-10 right-0 absolute"></div>
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium tracking-wider uppercase mb-4">Explainability</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Gemini-Powered<br><span class="text-purple-400/80">Bias Explanations</span></h2>
-    </div>
+<!-- ══════════════════════════════ TAB 7: WHAT-IF ══════════════════════════════ -->
+<div class="tab-pane" id="tab-whatif">
+  <div class="page-title">What-If Explorer</div>
+  <div class="page-sub">Change one protected attribute and see how the model decision flips</div>
 
-    <div class="grid md:grid-cols-2 gap-6 animate-on-scroll">
-      <!-- Chat simulation -->
-      <div class="glass rounded-2xl p-5 flex flex-col" style="min-height: 380px;">
-        <div class="flex items-center gap-2 mb-4 pb-3 border-b border-white/5">
-          <div class="w-6 h-6 rounded-full accent-gradient flex items-center justify-center">
-            <i data-lucide="sparkles" class="w-3 h-3 text-white"></i>
+  <div class="grid grid-2" style="margin-bottom:14px">
+    <!-- Profile editor -->
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">👤 Individual Profile</div>
+        <div class="profile-grid">
+          <div class="form-group">
+            <label>Gender</label>
+            <select id="wi-gender"><option value="0">Male</option><option value="1">Female</option></select>
           </div>
-          <span class="text-xs text-white font-medium">FairForge XAI — powered by Gemini</span>
-          <span class="ml-auto text-[9px] text-emerald-400 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Online</span>
-        </div>
-
-        <div class="flex-1 space-y-3 overflow-y-auto">
-          <div class="flex gap-2">
-            <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="user" class="w-3 h-3 text-slate-500"></i>
-            </div>
-            <div class="bg-slate-800/50 rounded-xl rounded-tl-none px-3 py-2 text-xs text-slate-300 max-w-[85%]">
-              Why is the model biased against Hispanic female applicants?
-            </div>
+          <div class="form-group">
+            <label>Race</label>
+            <select id="wi-race"><option value="0">White</option><option value="1">Black</option><option value="2">Hispanic</option><option value="3">Asian</option></select>
           </div>
-
-          <div class="flex gap-2">
-            <div class="w-6 h-6 rounded-full accent-gradient flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="sparkles" class="w-3 h-3 text-white"></i>
-            </div>
-            <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl rounded-tl-none px-3 py-2 text-xs text-slate-300 max-w-[85%] leading-relaxed">
-              <p class="mb-2">Analysis shows a <strong class="text-white">Disparate Impact of 0.41</strong> for Hispanic females — significantly below the 0.80 threshold.</p>
-              <p class="mb-2"><strong class="text-white">Root causes:</strong></p>
-              <p class="mb-1">1. Training data underrepresents this group (only 6.2% of samples)</p>
-              <p class="mb-1">2. Feature "zip_code" acts as a proxy for ethnicity</p>
-              <p class="mb-2">3. Historical hiring patterns encoded in labels</p>
-              <p><strong class="text-emerald-400">Recommendation:</strong> Run PPO training with α=0.7, β=0.3 to rebalance without significant accuracy loss.</p>
-            </div>
+          <div class="form-group">
+            <label>Age</label>
+            <input type="number" id="wi-age" value="35" min="18" max="70">
           </div>
-
-          <div class="flex gap-2">
-            <div class="w-6 h-6 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="user" class="w-3 h-3 text-slate-500"></i>
-            </div>
-            <div class="bg-slate-800/50 rounded-xl rounded-tl-none px-3 py-2 text-xs text-slate-300 max-w-[85%]">
-              Generate a compliance summary for auditors.
-            </div>
-          </div>
-
-          <div class="flex gap-2">
-            <div class="w-6 h-6 rounded-full accent-gradient flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="sparkles" class="w-3 h-3 text-white"></i>
-            </div>
-            <div class="bg-indigo-500/10 border border-indigo-500/20 rounded-xl rounded-tl-none px-3 py-2 text-xs text-slate-400 max-w-[85%] leading-relaxed italic">
-              Generating PDF report with EU AI Act Section 10 compliance mapping...
-            </div>
+          <div class="form-group">
+            <label>Income</label>
+            <input type="number" id="wi-income" value="65000">
           </div>
         </div>
-
-        <div class="mt-3 flex gap-2">
-          <input type="text" placeholder="Ask about your model's fairness..." class="flex-1 bg-slate-800/50 border border-white/5 rounded-lg px-3 py-2 text-xs text-white placeholder:text-slate-600 focus:outline-none focus:border-indigo-500/30">
-          <button class="w-8 h-8 rounded-lg accent-gradient flex items-center justify-center"><i data-lucide="send" class="w-3.5 h-3.5 text-white"></i></button>
+        <div class="form-group" style="margin-top:4px">
+          <label>Counterfactual: change</label>
+          <select id="wi-cf-attr">
+            <option value="gender">Gender</option>
+            <option value="race">Race</option>
+            <option value="age">Age</option>
+          </select>
         </div>
+        <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="runCounterfactual()">
+          🔮 Analyze Counterfactual
+        </button>
       </div>
 
-      <!-- Capabilities -->
-      <div class="space-y-4">
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="search" class="w-4 h-4 text-purple-400"></i>
-            </div>
-            <div>
-              <h4 class="text-white text-sm font-medium mb-1">Root Cause Analysis</h4>
-              <p class="text-slate-500 text-xs leading-relaxed">Gemini examines feature importance, data distribution, and proxy variable detection to explain why bias exists.</p>
-            </div>
+      <!-- Decision display -->
+      <div class="card" id="decision-card" style="display:none">
+        <div class="card-title">Decision</div>
+        <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px">Original</div>
+            <div class="decision-chip" id="decision-original"></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px" id="prob-original"></div>
           </div>
+          <div style="font-size:20px;color:var(--text3)">→</div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text3);margin-bottom:6px">Counterfactual</div>
+            <div class="decision-chip" id="decision-cf"></div>
+            <div style="font-size:10px;color:var(--text3);margin-top:4px" id="prob-cf"></div>
+          </div>
+          <div style="margin-left:auto;text-align:center" id="flip-indicator"></div>
         </div>
+      </div>
+    </div>
 
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="languages" class="w-4 h-4 text-purple-400"></i>
-            </div>
-            <div>
-              <h4 class="text-white text-sm font-medium mb-1">Plain-English Explanations</h4>
-              <p class="text-slate-500 text-xs leading-relaxed">Translates complex statistical metrics into language any stakeholder — from engineer to regulator — can understand.</p>
-            </div>
+    <!-- Group comparison grid -->
+    <div>
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-title">🌐 All Group Outcomes</div>
+        <div id="group-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>
+      </div>
+      <div class="card">
+        <div class="card-title">✨ Gemini Counterfactual Explanation</div>
+        <div class="gemini-box">
+          <div class="gemini-header">
+            <div class="gemini-icon">✦</div>
+            <span style="font-size:12px;font-weight:500">Counterfactual Analysis</span>
           </div>
-        </div>
-
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="scale" class="w-4 h-4 text-purple-400"></i>
-            </div>
-            <div>
-              <h4 class="text-white text-sm font-medium mb-1">Regulatory Compliance Mapping</h4>
-              <p class="text-slate-500 text-xs leading-relaxed">Auto-maps findings to EU AI Act, EEOC guidelines, and local regulations. Generates audit-ready documentation.</p>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass rounded-xl p-4 glass-hover transition-all duration-300">
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <i data-lucide="lightbulb" class="w-4 h-4 text-purple-400"></i>
-            </div>
-            <div>
-              <h4 class="text-white text-sm font-medium mb-1">Actionable Recommendations</h4>
-              <p class="text-slate-500 text-xs leading-relaxed">Suggests specific mitigation strategies: PPO hyperparameters, feature removal, resampling techniques, threshold adjustments.</p>
-            </div>
-          </div>
+          <div class="gemini-text" id="cf-explanation" style="font-size:11px;line-height:1.7">Run analysis above to get AI explanation...</div>
         </div>
       </div>
     </div>
   </div>
-</section>
+</div><!-- end tab-whatif -->
 
-<!-- ==================== SLIDE 8: DIFFERENTIATION ==================== -->
-<section class="slide" id="slide-7">
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Why FairForge</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Not Another<br><span class="text-indigo-400/80">Bias Detection Tool</span></h2>
-    </div>
+</main><!-- end content -->
+</div><!-- end main-row -->
+</div><!-- end app -->
 
-    <div class="animate-on-scroll overflow-x-auto">
-      <table class="w-full text-sm">
-        <thead>
-          <tr class="border-b border-white/5">
-            <th class="text-left py-3 px-4 text-slate-500 text-xs font-medium uppercase tracking-wider">Feature</th>
-            <th class="py-3 px-4 text-center">
-              <div class="inline-flex items-center gap-1.5 text-indigo-400 text-xs font-medium">
-                <span class="w-5 h-5 rounded accent-gradient flex items-center justify-center"><i data-lucide="sparkles" class="w-3 h-3 text-white"></i></span>
-                FairForge
-              </div>
-            </th>
-            <th class="py-3 px-4 text-center text-slate-500 text-xs font-medium">AIF360</th>
-            <th class="py-3 px-4 text-center text-slate-500 text-xs font-medium">Fairlearn</th>
-            <th class="py-3 px-4 text-center text-slate-500 text-xs font-medium">SHAP/LIME</th>
-          </tr>
-        </thead>
-        <tbody class="text-xs">
-          <tr class="border-b border-white/5">
-            <td class="py-3 px-4 text-slate-300">Fairness Metrics Dashboard</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-          <tr class="border-b border-white/5">
-            <td class="py-3 px-4 text-slate-300">RL-Based Bias Training</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-          <tr class="border-b border-white/5">
-            <td class="py-3 px-4 text-slate-300">Interactive Web UI</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-          <tr class="border-b border-white/5">
-            <td class="py-3 px-4 text-slate-300">LLM-Powered Explanations</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-          <tr class="border-b border-white/5">
-            <td class="py-3 px-4 text-slate-300">Intersectional Heatmaps</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center text-slate-600">Partial</td>
-            <td class="py-3 px-4 text-center text-slate-600">Partial</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-          <tr class="border-b border-white/5">
-            <td class="py-3 px-4 text-slate-300">PDF Report Generation</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-          <tr>
-            <td class="py-3 px-4 text-slate-300">No-Code Experience</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="check" class="w-4 h-4 text-emerald-400 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-            <td class="py-3 px-4 text-center text-slate-600">Partial</td>
-            <td class="py-3 px-4 text-center"><i data-lucide="x" class="w-4 h-4 text-slate-700 mx-auto"></i></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="mt-6 text-center animate-on-scroll">
-      <p class="text-slate-500 text-xs">FairForge combines detection <span class="text-indigo-400">+</span> training <span class="text-indigo-400">+</span> explanation <span class="text-indigo-400">+</span> compliance — in one no-code platform.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 9: WORKFLOW ==================== -->
-<section class="slide" id="slide-8">
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Workflow</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">End-to-End<br><span class="text-indigo-400/80">Fairness Workflow</span></h2>
-    </div>
-
-    <div class="animate-on-scroll">
-      <!-- Desktop Flow -->
-      <div class="hidden md:flex items-center justify-between gap-2">
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer">
-          <div class="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="upload-cloud" class="w-5 h-5 text-indigo-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">Upload</div>
-          <div class="text-slate-600 text-[9px] mt-0.5">CSV / Model</div>
-        </div>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700 flex-shrink-0"></i>
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer">
-          <div class="w-10 h-10 rounded-lg bg-amber-500/10 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="scan" class="w-5 h-5 text-amber-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">Audit</div>
-          <div class="text-slate-600 text-[9px] mt-0.5">Metrics Calc</div>
-        </div>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700 flex-shrink-0"></i>
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer">
-          <div class="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="flame" class="w-5 h-5 text-red-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">Stress-Test</div>
-          <div class="text-slate-600 text-[9px] mt-0.5">Adversarial</div>
-        </div>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700 flex-shrink-0"></i>
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer">
-          <div class="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="grid-3x3" class="w-5 h-5 text-purple-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">Visualize</div>
-          <div class="text-slate-600 text-[9px] mt-0.5">Heatmaps</div>
-        </div>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700 flex-shrink-0"></i>
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer">
-          <div class="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="shield" class="w-5 h-5 text-emerald-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">Mitigate</div>
-          <div class="text-slate-600 text-[9px] mt-0.5">Quick Fixes</div>
-        </div>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700 flex-shrink-0"></i>
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer border-indigo-500/20">
-          <div class="w-10 h-10 rounded-lg bg-indigo-500/20 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="brain-circuit" class="w-5 h-5 text-indigo-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">PPO Train</div>
-          <div class="text-indigo-400/60 text-[9px] mt-0.5">RL Fix</div>
-        </div>
-        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-700 flex-shrink-0"></i>
-        <div class="flow-box glass rounded-xl p-4 text-center flex-1 cursor-pointer">
-          <div class="w-10 h-10 rounded-lg bg-sky-500/10 flex items-center justify-center mx-auto mb-2">
-            <i data-lucide="file-text" class="w-5 h-5 text-sky-400"></i>
-          </div>
-          <div class="text-white text-xs font-medium">Export</div>
-          <div class="text-slate-600 text-[9px] mt-0.5">PDF Report</div>
-        </div>
-      </div>
-
-      <!-- Mobile Flow -->
-      <div class="md:hidden space-y-3">
-        <div class="flex items-center gap-3 glass rounded-xl p-3">
-          <div class="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center flex-shrink-0"><i data-lucide="upload-cloud" class="w-4 h-4 text-indigo-400"></i></div>
-          <div class="flex-1"><div class="text-white text-xs font-medium">Upload</div><div class="text-slate-600 text-[9px]">CSV / Model</div></div>
-          <i data-lucide="arrow-down" class="w-3 h-3 text-slate-700"></i>
-        </div>
-        <div class="flex items-center gap-3 glass rounded-xl p-3">
-          <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0"><i data-lucide="scan" class="w-4 h-4 text-amber-400"></i></div>
-          <div class="flex-1"><div class="text-white text-xs font-medium">Audit → Stress-Test → Visualize</div></div>
-          <i data-lucide="arrow-down" class="w-3 h-3 text-slate-700"></i>
-        </div>
-        <div class="flex items-center gap-3 glass rounded-xl p-3">
-          <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0"><i data-lucide="brain-circuit" class="w-4 h-4 text-emerald-400"></i></div>
-          <div class="flex-1"><div class="text-white text-xs font-medium">Mitigate → PPO Train</div></div>
-          <i data-lucide="arrow-down" class="w-3 h-3 text-slate-700"></i>
-        </div>
-        <div class="flex items-center gap-3 glass rounded-xl p-3">
-          <div class="w-8 h-8 rounded-lg bg-sky-500/10 flex items-center justify-center flex-shrink-0"><i data-lucide="file-text" class="w-4 h-4 text-sky-400"></i></div>
-          <div class="flex-1"><div class="text-white text-xs font-medium">Export PDF Report</div></div>
-        </div>
-      </div>
-
-      <!-- Time indicator -->
-      <div class="mt-8 glass rounded-xl p-4 text-center animate-on-scroll">
-        <div class="flex items-center justify-center gap-2 text-sm text-slate-400">
-          <i data-lucide="clock" class="w-4 h-4 text-indigo-400"></i>
-          <span>Full workflow from upload to report: <span class="text-white font-medium">~5 minutes</span> (excluding PPO training time)</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 10: ARCHITECTURE ==================== -->
-<section class="slide" id="slide-9">
-  <div class="max-w-5xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Architecture</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Scalable Cloud-Native<br><span class="text-indigo-400/80">Architecture</span></h2>
-    </div>
-
-    <div class="space-y-3 animate-on-scroll">
-      <!-- Layer 1: Frontend -->
-      <div class="arch-layer glass rounded-xl p-4 border-l-2 border-l-indigo-500">
-        <div class="flex items-center gap-3 mb-2">
-          <i data-lucide="monitor" class="w-4 h-4 text-indigo-400"></i>
-          <span class="text-white text-sm font-medium">Frontend Layer</span>
-          <span class="text-[9px] text-slate-600 ml-auto">Client-Side</span>
-        </div>
-        <div class="flex flex-wrap gap-2 ml-7">
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Tailwind CSS</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Plotly.js</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">HTML/JS</span>
-        </div>
-      </div>
-
-      <!-- Layer 2: Backend -->
-      <div class="arch-layer glass rounded-xl p-4 border-l-2 border-l-emerald-500">
-        <div class="flex items-center gap-3 mb-2">
-          <i data-lucide="server" class="w-4 h-4 text-emerald-400"></i>
-          <span class="text-white text-sm font-medium">API Layer</span>
-          <span class="text-[9px] text-slate-600 ml-auto">GCP Cloud Run</span>
-        </div>
-        <div class="flex flex-wrap gap-2 ml-7">
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">FastAPI</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Pydantic</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">REST + WebSocket</span>
-        </div>
-      </div>
-
-      <!-- Layer 3: ML Engine -->
-      <div class="arch-layer glass rounded-xl p-4 border-l-2 border-l-amber-500">
-        <div class="flex items-center gap-3 mb-2">
-          <i data-lucide="cpu" class="w-4 h-4 text-amber-400"></i>
-          <span class="text-white text-sm font-medium">ML & RL Engine</span>
-          <span class="text-[9px] text-slate-600 ml-auto">Core Logic</span>
-        </div>
-        <div class="flex flex-wrap gap-2 ml-7">
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">PyTorch</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Scikit-learn</span>
-          <span class="px-2 py-0.5 rounded bg-amber-500/10 text-[10px] text-amber-400 border border-amber-500/20">Stable-Baselines3 PPO</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Gymnasium</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">AIF360 Metrics</span>
-        </div>
-      </div>
-
-      <!-- Layer 4: XAI -->
-      <div class="arch-layer glass rounded-xl p-4 border-l-2 border-l-purple-500">
-        <div class="flex items-center gap-3 mb-2">
-          <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
-          <span class="text-white text-sm font-medium">XAI Layer</span>
-          <span class="text-[9px] text-slate-600 ml-auto">Google Vertex AI</span>
-        </div>
-        <div class="flex flex-wrap gap-2 ml-7">
-          <span class="px-2 py-0.5 rounded bg-purple-500/10 text-[10px] text-purple-400 border border-purple-500/20">Gemini API</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Prompt Engineering</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Context Injection</span>
-        </div>
-      </div>
-
-      <!-- Layer 5: Infrastructure -->
-      <div class="arch-layer glass rounded-xl p-4 border-l-2 border-l-sky-500">
-        <div class="flex items-center gap-3 mb-2">
-          <i data-lucide="cloud" class="w-4 h-4 text-sky-400"></i>
-          <span class="text-white text-sm font-medium">Infrastructure</span>
-          <span class="text-[9px] text-slate-600 ml-auto">Google Cloud</span>
-        </div>
-        <div class="flex flex-wrap gap-2 ml-7">
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Docker</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">GCP Cloud Run</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Google Cloud Storage</span>
-          <span class="px-2 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400">Firebase Auth</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-5 text-center animate-on-scroll">
-      <span class="inline-flex items-center gap-2 text-xs text-slate-500 glass px-4 py-2 rounded-full">
-        <i data-lucide="zap" class="w-3 h-3 text-emerald-400"></i>
-        Serverless, auto-scaling, production-ready
-      </span>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 11: TECH STACK ==================== -->
-<section class="slide" id="slide-10">
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Tech Stack</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Modern, Open-Source<br><span class="text-indigo-400/80">& Google-Powered</span></h2>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 animate-on-scroll">
-      <div class="tech-card glass rounded-xl p-4">
-        <div class="text-[10px] text-indigo-400 uppercase tracking-wider font-medium mb-3">Frontend</div>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span><span class="text-xs text-slate-300">Tailwind CSS</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span><span class="text-xs text-slate-300">Plotly.js</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span><span class="text-xs text-slate-300">Vanilla JS</span></div>
-        </div>
-      </div>
-
-      <div class="tech-card glass rounded-xl p-4">
-        <div class="text-[10px] text-emerald-400 uppercase tracking-wider font-medium mb-3">Backend</div>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span class="text-xs text-slate-300">FastAPI</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span class="text-xs text-slate-300">PyTorch</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span><span class="text-xs text-slate-300">Scikit-learn</span></div>
-        </div>
-      </div>
-
-      <div class="tech-card glass rounded-xl p-4">
-        <div class="text-[10px] text-amber-400 uppercase tracking-wider font-medium mb-3">RL Engine</div>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span class="text-xs text-slate-300">Stable-Baselines3</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span class="text-xs text-slate-300">Gymnasium</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span><span class="text-xs text-slate-300">Custom FairEnv</span></div>
-        </div>
-      </div>
-
-      <div class="tech-card glass rounded-xl p-4">
-        <div class="text-[10px] text-purple-400 uppercase tracking-wider font-medium mb-3">XAI</div>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span><span class="text-xs text-slate-300">Google Gemini API</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span><span class="text-xs text-slate-300">Vertex AI</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span><span class="text-xs text-slate-300">Prompt Chains</span></div>
-        </div>
-      </div>
-
-      <div class="tech-card glass rounded-xl p-4">
-        <div class="text-[10px] text-sky-400 uppercase tracking-wider font-medium mb-3">Infrastructure</div>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span><span class="text-xs text-slate-300">Docker</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span><span class="text-xs text-slate-300">GCP Cloud Run</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span><span class="text-xs text-slate-300">GCS + Firebase Auth</span></div>
-        </div>
-      </div>
-
-      <div class="tech-card glass rounded-xl p-4">
-        <div class="text-[10px] text-rose-400 uppercase tracking-wider font-medium mb-3">Fairness</div>
-        <div class="space-y-2">
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span><span class="text-xs text-slate-300">Custom Metrics</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span><span class="text-xs text-slate-300">AIF360 Compatible</span></div>
-          <div class="flex items-center gap-2"><span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span><span class="text-xs text-slate-300">Intersectional Analysis</span></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="mt-6 text-center animate-on-scroll">
-      <span class="inline-flex items-center gap-2 text-xs text-emerald-400 glass px-4 py-2 rounded-full border-emerald-500/20">
-        <i data-lucide="lock-open" class="w-3 h-3"></i>
-        Zero licensing cost — MIT Licensed
-      </span>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 12: MVP DEMO ==================== -->
-<section class="slide" id="slide-11">
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Live Demo</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">What We Built<br><span class="text-indigo-400/80">In 48 Hours</span></h2>
-      <p class="text-slate-500 text-sm mt-3">Real screenshots from the working MVP</p>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 animate-on-scroll">
-      <div class="screenshot-card glass rounded-xl overflow-hidden cursor-pointer md:col-span-2 md:row-span-2">
-        <img src="https://picsum.photos/seed/fairforge-dashboard/800/500.jpg" alt="Dashboard" class="w-full h-full object-cover opacity-60">
-        <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-950 via-slate-950/80 to-transparent">
-          <div class="text-white text-sm font-medium">Fairness Dashboard</div>
-          <div class="text-slate-400 text-[10px]">Real-time metrics, group-level analysis, and violation alerts</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card glass rounded-xl overflow-hidden cursor-pointer relative">
-        <img src="https://picsum.photos/seed/fairforge-heatmap/400/250.jpg" alt="Heatmap" class="w-full h-full object-cover opacity-60">
-        <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-slate-950 to-transparent">
-          <div class="text-white text-xs font-medium">Intersectional Heatmap</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card glass rounded-xl overflow-hidden cursor-pointer relative">
-        <img src="https://picsum.photos/seed/fairforge-training/400/250.jpg" alt="Training" class="w-full h-full object-cover opacity-60">
-        <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-slate-950 to-transparent">
-          <div class="text-white text-xs font-medium">PPO Training Curves</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card glass rounded-xl overflow-hidden cursor-pointer relative">
-        <img src="https://picsum.photos/seed/fairforge-gemini/400/250.jpg" alt="Gemini" class="w-full h-full object-cover opacity-60">
-        <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-slate-950 to-transparent">
-          <div class="text-white text-xs font-medium">Gemini XAI Chat</div>
-        </div>
-      </div>
-
-      <div class="screenshot-card glass rounded-xl overflow-hidden cursor-pointer relative">
-        <img src="https://picsum.photos/seed/fairforge-report/400/250.jpg" alt="Report" class="w-full h-full object-cover opacity-60">
-        <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-slate-950 to-transparent">
-          <div class="text-white text-xs font-medium">PDF Report Export</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 13: ROADMAP ==================== -->
-<section class="slide" id="slide-12">
-  <div class="max-w-5xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Roadmap</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">From Hackathon MVP<br><span class="text-indigo-400/80">To Industry Standard</span></h2>
-    </div>
-
-    <div class="relative animate-on-scroll">
-      <!-- Timeline line -->
-      <div class="absolute left-5 md:left-1/2 top-0 bottom-0 w-px bg-gradient-to-b from-indigo-500/50 via-indigo-500/20 to-transparent"></div>
-
-      <!-- Phase 1 -->
-      <div class="relative flex flex-col md:flex-row md:items-center mb-10 pl-12 md:pl-0">
-        <div class="md:w-1/2 md:pr-10 md:text-right">
-          <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 inline-block text-left md:text-right">
-            <div class="text-[10px] text-emerald-400 uppercase tracking-wider font-medium mb-1">Near-term — v3.1</div>
-            <h4 class="text-white text-sm font-medium mb-1">Production Drift Detection</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Real-time fairness monitoring in production. Alerts when bias metrics drift beyond thresholds after deployment.</p>
-          </div>
-        </div>
-        <div class="absolute left-2.5 md:left-1/2 md:-translate-x-1/2 top-4 w-5 h-5 rounded-full bg-emerald-500 border-4 border-slate-950 z-10"></div>
-        <div class="md:w-1/2 md:pl-10 hidden md:block"></div>
-      </div>
-
-      <!-- Phase 2 -->
-      <div class="relative flex flex-col md:flex-row md:items-center mb-10 pl-12 md:pl-0">
-        <div class="md:w-1/2 md:pr-10 hidden md:block"></div>
-        <div class="absolute left-2.5 md:left-1/2 md:-translate-x-1/2 top-4 w-5 h-5 rounded-full bg-amber-500 border-4 border-slate-950 z-10"></div>
-        <div class="md:w-1/2 md:pl-10">
-          <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 inline-block text-left">
-            <div class="text-[10px] text-amber-400 uppercase tracking-wider font-medium mb-1">Mid-term — v4.0</div>
-            <h4 class="text-white text-sm font-medium mb-1">MLflow & SageMaker Plugins</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Native integration with MLOps pipelines. Multi-agent fairness where multiple AI agents negotiate fair outcomes together.</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Phase 3 -->
-      <div class="relative flex flex-col md:flex-row md:items-center pl-12 md:pl-0">
-        <div class="md:w-1/2 md:pr-10 md:text-right">
-          <div class="glass rounded-xl p-4 glass-hover transition-all duration-300 border-indigo-500/20 inline-block text-left md:text-right">
-            <div class="text-[10px] text-indigo-400 uppercase tracking-wider font-medium mb-1">Vision</div>
-            <h4 class="text-white text-sm font-medium mb-1">The "Gymnasium for Fair AI"</h4>
-            <p class="text-slate-500 text-xs leading-relaxed">Default fairness training environment for every AI team. Public fairness leaderboard benchmarking models across industries.</p>
-          </div>
-        </div>
-        <div class="absolute left-2.5 md:left-1/2 md:-translate-x-1/2 top-4 w-5 h-5 rounded-full accent-gradient border-4 border-slate-950 z-10"></div>
-        <div class="md:w-1/2 md:pl-10 hidden md:block"></div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 14: IMPACT & MARKET ==================== -->
-<section class="slide" id="slide-13">
-  <div class="bg-glow w-[600px] h-[600px] bg-indigo-600/10 top-0 right-0 absolute"></div>
-  <div class="max-w-6xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Impact</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Why This Matters<br><span class="text-indigo-400/80">Right Now</span></h2>
-    </div>
-
-    <div class="grid md:grid-cols-3 gap-5 mb-8 animate-on-scroll">
-      <!-- Stat 1 -->
-      <div class="glass rounded-2xl p-6 text-center shimmer relative overflow-hidden">
-        <div class="text-4xl md:text-5xl font-extralight text-white stat-number mb-1">$12.4B</div>
-        <div class="text-slate-500 text-xs mb-3">AI Governance Market by 2030</div>
-        <div class="h-1 rounded-full bg-slate-800 overflow-hidden">
-          <div class="h-full rounded-full accent-gradient transition-all duration-1000" style="width: 78%"></div>
-        </div>
-        <div class="text-[9px] text-slate-600 mt-1">CAGR 23.1% (2024–2030)</div>
-      </div>
-
-      <!-- Stat 2 -->
-      <div class="glass rounded-2xl p-6 text-center shimmer relative overflow-hidden">
-        <div class="text-4xl md:text-5xl font-extralight text-white stat-number mb-1">2026</div>
-        <div class="text-slate-500 text-xs mb-3">EU AI Act Enforcement</div>
-        <div class="flex items-center justify-center gap-2 mt-2">
-          <span class="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-[9px] text-red-400">Mandatory Audits</span>
-          <span class="px-2 py-0.5 rounded bg-red-500/10 border border-red-500/20 text-[9px] text-red-400">High-Risk AI</span>
-        </div>
-        <div class="text-[9px] text-slate-600 mt-3">Fairness audits required for employment, credit, insurance AI</div>
-      </div>
-
-      <!-- Stat 3 -->
-      <div class="glass rounded-2xl p-6 text-center shimmer relative overflow-hidden">
-        <div class="text-4xl md:text-5xl font-extralight text-emerald-400 stat-number mb-1">$0</div>
-        <div class="text-slate-500 text-xs mb-3">Cost to Start Using FairForge</div>
-        <div class="flex items-center justify-center gap-2 mt-2">
-          <span class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400">Open Source</span>
-          <span class="px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 text-[9px] text-emerald-400">MIT License</span>
-        </div>
-        <div class="text-[9px] text-slate-600 mt-3">No enterprise pricing barrier — fairness for all</div>
-      </div>
-    </div>
-
-    <!-- Regulatory Timeline -->
-    <div class="glass rounded-2xl p-5 animate-on-scroll">
-      <div class="text-xs text-slate-500 uppercase tracking-wider font-medium mb-4">Regulatory Pressure Timeline</div>
-      <div class="flex items-end justify-between gap-2 h-24">
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-slate-800 h-8"></div>
-          <span class="text-[9px] text-slate-600">2020</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-slate-700 h-12"></div>
-          <span class="text-[9px] text-slate-600">2021</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-slate-600 h-16"></div>
-          <span class="text-[9px] text-slate-600">2022</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-slate-500 h-20"></div>
-          <span class="text-[9px] text-slate-600">2023</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-amber-500/50 h-24"></div>
-          <span class="text-[9px] text-amber-400">2024</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-amber-500/70 h-24"></div>
-          <span class="text-[9px] text-amber-400">2025</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-red-500 h-24 relative">
-            <div class="absolute -top-5 left-1/2 -translate-x-1/2 text-[8px] text-red-400 whitespace-nowrap font-medium">EU AI Act ⚡</div>
-          </div>
-          <span class="text-[9px] text-red-400 font-medium">2026</span>
-        </div>
-        <div class="flex-1 flex flex-col items-center gap-1">
-          <div class="w-full rounded-t bg-indigo-500/50 h-24 border-2 border-indigo-500/30 border-dashed"></div>
-          <span class="text-[9px] text-indigo-400">2027+</span>
-        </div>
-      </div>
-      <div class="text-[9px] text-slate-600 mt-2 text-center">Increasing global regulatory pressure → Growing demand for fairness tools</div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 15: TEAM & LINKS ==================== -->
-<section class="slide" id="slide-14">
-  <div class="max-w-5xl mx-auto px-6 w-full">
-    <div class="text-center mb-12 animate-on-scroll">
-      <div class="inline-block px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium tracking-wider uppercase mb-4">Team</div>
-      <h2 class="text-3xl md:text-5xl font-light tracking-tight">Team <span class="hero-gradient">MASSIVE-X</span></h2>
-    </div>
-
-    <div class="grid md:grid-cols-2 gap-6 animate-on-scroll">
-      <!-- Links -->
-      <div class="glass rounded-2xl p-6 space-y-4">
-        <h4 class="text-white text-sm font-medium mb-4">Links & Resources</h4>
-
-        <a href="#" class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/60 transition-colors group">
-          <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
-            <i data-lucide="globe" class="w-5 h-5 text-indigo-400"></i>
-          </div>
-          <div class="flex-1">
-            <div class="text-white text-xs font-medium">Live Demo</div>
-            <div class="text-slate-500 text-[10px]">Hugging Face Space</div>
-          </div>
-          <i data-lucide="external-link" class="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors"></i>
-        </a>
-
-        <a href="#" class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/60 transition-colors group">
-          <div class="w-10 h-10 rounded-xl bg-slate-500/10 flex items-center justify-center group-hover:bg-slate-500/20 transition-colors">
-            <i data-lucide="github" class="w-5 h-5 text-slate-400"></i>
-          </div>
-          <div class="flex-1">
-            <div class="text-white text-xs font-medium">Source Code</div>
-            <div class="text-slate-500 text-[10px]">GitHub Repository</div>
-          </div>
-          <i data-lucide="external-link" class="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors"></i>
-        </a>
-
-        <a href="#" class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/60 transition-colors group">
-          <div class="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center group-hover:bg-red-500/20 transition-colors">
-            <i data-lucide="play" class="w-5 h-5 text-red-400"></i>
-          </div>
-          <div class="flex-1">
-            <div class="text-white text-xs font-medium">Demo Video</div>
-            <div class="text-slate-500 text-[10px]">2-minute walkthrough</div>
-          </div>
-          <i data-lucide="external-link" class="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors"></i>
-        </a>
-
-        <a href="#" class="flex items-center gap-3 p-3 rounded-xl bg-slate-800/30 hover:bg-slate-800/60 transition-colors group">
-          <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center group-hover:bg-emerald-500/20 transition-colors">
-            <i data-lucide="book-open" class="w-5 h-5 text-emerald-400"></i>
-          </div>
-          <div class="flex-1">
-            <div class="text-white text-xs font-medium">API Documentation</div>
-            <div class="text-slate-500 text-[10px]">FastAPI auto-docs</div>
-          </div>
-          <i data-lucide="external-link" class="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors"></i>
-        </a>
-      </div>
-
-      <!-- QR Code + Info -->
-      <div class="flex flex-col items-center justify-center gap-6">
-        <div class="glass rounded-2xl p-8 text-center">
-          <!-- Stylized QR placeholder -->
-          <div class="w-40 h-40 mx-auto bg-white rounded-xl p-3 mb-4">
-            <svg viewBox="0 0 100 100" class="w-full h-full">
-              <rect x="5" y="5" width="25" height="25" rx="2" fill="#020617"/>
-              <rect x="8" y="8" width="19" height="19" rx="1" fill="white"/>
-              <rect x="11" y="11" width="13" height="13" rx="1" fill="#4f46e5"/>
-              <rect x="70" y="5" width="25" height="25" rx="2" fill="#020617"/>
-              <rect x="73" y="8" width="19" height="19" rx="1" fill="white"/>
-              <rect x="76" y="11" width="13" height="13" rx="1" fill="#4f46e5"/>
-              <rect x="5" y="70" width="25" height="25" rx="2" fill="#020617"/>
-              <rect x="8" y="73" width="19" height="19" rx="1" fill="white"/>
-              <rect x="11" y="76" width="13" height="13" rx="1" fill="#4f46e5"/>
-              <rect x="35" y="5" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="5" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="5" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="15" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="15" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="15" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="25" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="25" width="5" height="5" fill="#020617"/>
-              <rect x="5" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="15" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="25" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="80" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="90" y="35" width="5" height="5" fill="#020617"/>
-              <rect x="5" y="45" width="5" height="5" fill="#020617"/>
-              <rect x="15" y="45" width="5" height="5" fill="#020617"/>
-              <rect x="25" y="45" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="45" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="45" width="5" height="5" fill="#020617"/>
-              <rect x="80" y="45" width="5" height="5" fill="#020617"/>
-              <rect x="5" y="55" width="5" height="5" fill="#020617"/>
-              <rect x="25" y="55" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="55" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="55" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="55" width="5" height="5" fill="#020617"/>
-              <rect x="90" y="55" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="65" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="65" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="65" width="5" height="5" fill="#020617"/>
-              <rect x="80" y="65" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="75" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="75" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="75" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="75" width="5" height="5" fill="#020617"/>
-              <rect x="90" y="75" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="85" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="85" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="85" width="5" height="5" fill="#020617"/>
-              <rect x="80" y="85" width="5" height="5" fill="#020617"/>
-              <rect x="90" y="85" width="5" height="5" fill="#020617"/>
-              <rect x="35" y="95" width="5" height="5" fill="#020617"/>
-              <rect x="45" y="95" width="5" height="5" fill="#020617"/>
-              <rect x="55" y="95" width="5" height="5" fill="#020617"/>
-              <rect x="70" y="95" width="5" height="5" fill="#020617"/>
-              <rect x="90" y="95" width="5" height="5" fill="#020617"/>
-            </svg>
-          </div>
-          <div class="text-white text-xs font-medium">Scan for Live Demo</div>
-          <div class="text-slate-500 text-[10px] mt-1">fairforge.hf.space</div>
-        </div>
-
-        <div class="glass rounded-xl px-4 py-3 flex items-center gap-2 text-xs text-slate-400">
-          <i data-lucide="code-2" class="w-4 h-4 text-indigo-400"></i>
-          <span>Built with ❤️ in 48 hours at H2S Hackathon 2026</span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ==================== SLIDE 16: THANK YOU ==================== -->
-<section class="slide" id="slide-15">
-  <div class="bg-glow w-[800px] h-[800px] bg-indigo-600/15 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 absolute"></div>
-  <div class="bg-glow w-[400px] h-[400px] bg-purple-600/10 top-1/4 right-1/4 absolute"></div>
-
-  <div class="text-center px-6 max-w-3xl mx-auto relative z-10">
-    <div class="mb-8" style="animation: float 3s ease-in-out infinite;">
-      <div class="w-20 h-20 rounded-2xl accent-gradient flex items-center justify-center mx-auto shadow-lg shadow-indigo-500/20">
-        <svg width="40" height="40" viewBox="0 0 48 48" fill="none">
-          <rect x="10" y="14" width="28" height="22" rx="4" fill="white" fill-opacity="0.9"/>
-          <circle cx="18" cy="24" r="3" fill="#4f46e5"/>
-          <circle cx="30" cy="24" r="3" fill="#4f46e5"/>
-          <rect x="18" y="30" width="12" height="2" rx="1" fill="#4f46e5" fill-opacity="0.6"/>
-        </svg>
-      </div>
-    </div>
-
-    <h1 class="text-4xl md:text-6xl font-extralight tracking-tight mb-6">
-      <span class="hero-gradient">FairForge</span>
-      <span class="text-white/90"> Arena</span>
-    </h1>
-
-    <div class="glass rounded-2xl p-6 mb-8 inline-block">
-      <p class="text-lg md:text-xl text-white font-light leading-relaxed">
-        "Don't just detect bias.<br>
-        <span class="text-indigo-400 font-normal">Train your AI to overcome it.</span>"
-      </p>
-    </div>
-
-    <div class="mb-10">
-      <p class="text-slate-400 text-sm">Thank you!</p>
-      <div class="flex items-center justify-center gap-3 mt-2 flex-wrap">
-        <span class="inline-flex items-center gap-1.5 text-xs text-slate-500">
-          <i data-lucide="lock-open" class="w-3 h-3 text-emerald-400"></i>
-          Open Source (MIT)
-        </span>
-        <span class="text-slate-700">•</span>
-        <span class="inline-flex items-center gap-1.5 text-xs text-slate-500">
-          <i data-lucide="message-circle" class="w-3 h-3 text-indigo-400"></i>
-          Questions?
-        </span>
-      </div>
-    </div>
-
-    <div class="glass rounded-xl px-6 py-4 inline-flex items-center gap-4">
-      <div class="text-left">
-        <div class="text-[10px] text-slate-600 uppercase tracking-wider">Team</div>
-        <div class="text-white text-sm font-medium">MASSIVE-X</div>
-      </div>
-      <div class="w-px h-8 bg-white/5"></div>
-      <div class="text-left">
-        <div class="text-[10px] text-slate-600 uppercase tracking-wider">Event</div>
-        <div class="text-white text-sm font-medium">H2S Hackathon 2026</div>
-      </div>
-      <div class="w-px h-8 bg-white/5"></div>
-      <div class="text-left">
-        <div class="text-[10px] text-slate-600 uppercase tracking-wider">Track</div>
-        <div class="text-white text-sm font-medium">Unbiased AI Decisions</div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- Keyboard hint -->
-<div id="keyHint" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 glass px-4 py-2 rounded-full text-[10px] text-slate-600 flex items-center gap-3 transition-opacity duration-500">
-  <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">↑</kbd><kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">↓</kbd> Navigate</span>
-  <span class="text-slate-800">|</span>
-  <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">F</kbd> Fullscreen</span>
+<!-- Loading overlay -->
+<div id="loading-overlay">
+  <div class="spinner" style="width:32px;height:32px"></div>
+  <div class="loading-text" id="loading-text">Running fairness audit...</div>
 </div>
 
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- Print styles -->
+<style media="print">
+  body * { visibility: hidden; }
+  #print-area, #print-area * { visibility: visible; }
+  #print-area { position: absolute; left: 0; top: 0; color: #1e293b; font-family: sans-serif; padding: 40px; }
+</style>
+
 <script>
-  // Initialize Lucide icons
-  lucide.createIcons();
+/* ============================================================
+   FairForge Arena — Dashboard JavaScript
+   ============================================================ */
 
-  // Slide navigation
-  const slides = document.querySelectorAll('.slide');
-  const dots = document.querySelectorAll('.nav-dot');
-  let currentSlide = 0;
+const API = '';  // same origin
+let state = {
+  runId: null, domain: 'hiring', auditData: null,
+  trainingInterval: null, charts: {},
+  policies: [], suggestions: []
+};
 
-  function goToSlide(index) {
-    if (index < 0 || index >= slides.length) return;
-    currentSlide = index;
-    slides[index].scrollIntoView({ behavior: 'smooth' });
+// ── TAB SWITCHING ─────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('nav-' + tab).classList.add('active');
+  // Lazy load tab data
+  if (tab === 'heatmap'  && state.runId) loadHeatmap();
+  if (tab === 'policies' && state.runId) loadPolicies();
+  if (tab === 'report'   && state.runId) loadReport();
+  if (tab === 'mitigate' && state.runId) loadMitigate();
+}
+document.querySelectorAll('.nav-item').forEach(el => {
+  el.addEventListener('click', () => switchTab(el.dataset.tab));
+});
+
+// ── TOAST ─────────────────────────────────────────────────────
+function toast(msg, type='info') {
+  const el = document.getElementById('toast');
+  const colors = {info:'var(--indigo)', success:'var(--emerald)', error:'var(--red)', warn:'var(--amber)'};
+  el.innerHTML = `<span style="color:${colors[type]||colors.info}">●</span> &nbsp;${msg}`;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ── LOADING ───────────────────────────────────────────────────
+function showLoading(msg='Processing...') {
+  document.getElementById('loading-text').textContent = msg;
+  document.getElementById('loading-overlay').classList.add('visible');
+}
+function hideLoading() {
+  document.getElementById('loading-overlay').classList.remove('visible');
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────────
+let selectedFile = null;
+
+function onFileSelected(input) {
+  const f = input.files[0];
+  if (!f) return;
+  selectedFile = f;
+  document.getElementById('drop-text').textContent = '✓ ' + f.name;
+  document.getElementById('drop-sub').textContent = (f.size/1024).toFixed(1) + ' KB — Ready to audit';
+}
+
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.csv')) {
+    selectedFile = f;
+    document.getElementById('drop-text').textContent = '✓ ' + f.name;
+    document.getElementById('drop-sub').textContent = (f.size/1024).toFixed(1) + ' KB — Ready to audit';
+  }
+});
+
+// ── QUICK LOAD SAMPLE ─────────────────────────────────────────
+async function loadSample(domain) {
+  toast(`Loading ${domain} sample dataset...`, 'info');
+  document.getElementById('domain-select').value = domain;
+  const sensMap = {hiring:'gender,race', loan:'gender,race', medical:'gender,race', intersectional:'gender,race'};
+  const tgtMap  = {hiring:'hired', loan:'approved', medical:'high_risk', intersectional:'approved'};
+  document.getElementById('sensitive-cols').value = sensMap[domain] || 'gender,race';
+  document.getElementById('target-col').value     = tgtMap[domain]  || '';
+  try {
+    const res  = await fetch(`${API}/api/sample/${domain}`);
+    const blob = await res.blob();
+    selectedFile = new File([blob], `${domain}_sample.csv`, {type:'text/csv'});
+    document.getElementById('drop-text').textContent = `✓ ${domain}_sample.csv (demo)`;
+    document.getElementById('drop-sub').textContent  = 'Sample dataset loaded — click Run Audit';
+    switchTab('audit');
+    await runAudit();
+  } catch(e) { toast('Could not load sample: ' + e.message, 'error'); }
+}
+
+// ── RUN AUDIT ─────────────────────────────────────────────────
+async function runAudit() {
+  if (!selectedFile) { toast('Please select a CSV file first', 'warn'); return; }
+  const btn  = document.getElementById('audit-btn');
+  const icon = document.getElementById('audit-btn-icon');
+  const txt  = document.getElementById('audit-btn-text');
+  btn.disabled = true; icon.innerHTML = '<div class="spinner"></div>'; txt.textContent = 'Running audit...';
+  showLoading('Running fairness audit pipeline...');
+  try {
+    const fd = new FormData();
+    fd.append('file', selectedFile);
+    fd.append('domain',         document.getElementById('domain-select').value);
+    fd.append('sensitive_cols', document.getElementById('sensitive-cols').value);
+    fd.append('target_col',     document.getElementById('target-col').value);
+
+    const res  = await fetch(`${API}/api/audit`, {method:'POST', body:fd});
+    if (!res.ok) throw new Error((await res.json()).detail || 'Audit failed');
+    const data = await res.json();
+
+    state.runId     = data.run_id;
+    state.domain    = data.domain;
+    state.auditData = data;
+    state.suggestions = data.suggestions || [];
+
+    renderAuditResults(data);
+    updateTopBar(data);
+    toast(`Audit complete! Run ID: ${data.run_id}`, 'success');
+
+    // Update policy badge
+    const fails = (data.violations || []).length;
+    const pb = document.getElementById('policy-badge');
+    if (fails > 0) { pb.textContent = fails; pb.style.display = 'inline'; } else pb.style.display = 'none';
+
+  } catch(e) {
+    toast('Audit error: ' + e.message, 'error');
+  } finally {
+    hideLoading();
+    btn.disabled = false; icon.textContent = '⚡'; txt.textContent = 'Run Fairness Audit';
+  }
+}
+
+function updateTopBar(data) {
+  document.getElementById('run-label').style.display = 'inline';
+  const badge = document.getElementById('run-id-badge');
+  badge.textContent = data.run_id; badge.style.display = 'inline';
+  const db = document.getElementById('domain-badge');
+  db.textContent = data.domain.charAt(0).toUpperCase() + data.domain.slice(1);
+  db.style.color = 'var(--text2)';
+}
+
+function renderAuditResults(data) {
+  document.getElementById('audit-empty').style.display   = 'none';
+  document.getElementById('audit-results').style.display = 'block';
+
+  const m = data.metrics;
+  const g = data.grader;
+
+  // ── Metric cards
+  const cards = [
+    {label:'Overall Bias Score',        val:m.overall_bias_score.toFixed(3),    pass:m.overall_bias_score < 0.4, lbl: m.overall_bias_score>0.5?'HIGH':'MODERATE',  color:m.overall_bias_score>0.5?'fail':'warn'},
+    {label:'Disparate Impact Ratio',    val:m.disparate_impact_ratio.toFixed(3), pass:m.disparate_impact_ratio >= 0.8, lbl:m.disparate_impact_ratio>=0.8?'PASS':'FAIL', color:m.disparate_impact_ratio>=0.8?'pass':'fail'},
+    {label:'Demographic Parity Diff',   val:m.demographic_parity_diff.toFixed(3),pass:m.demographic_parity_diff < 0.1, lbl:m.demographic_parity_diff<0.1?'PASS':'FAIL', color:m.demographic_parity_diff<0.1?'pass':'fail'},
+    {label:'Equal Opportunity Diff',    val:m.equal_opportunity_diff.toFixed(3), pass:m.equal_opportunity_diff < 0.15, lbl:m.equal_opportunity_diff<0.15?'PASS':'WARN', color:m.equal_opportunity_diff<0.15?'pass':'warn'},
+  ];
+  document.getElementById('metric-cards').innerHTML = cards.map(c => `
+    <div class="metric-card">
+      <div class="metric-label">${c.label}</div>
+      <div class="metric-value">${c.val}</div>
+      <div class="metric-status status-${c.color}">● ${c.lbl}</div>
+    </div>`).join('');
+
+  // ── Grader bar chart
+  renderBarChart('chart-grader', {
+    labels: ['Bias Detection','Mitigation','Explanation','Efficiency','Policy','Consistency'],
+    values: [g.bias_detection_score, g.mitigation_score, g.explanation_quality,
+             g.efficiency_score, g.policy_compliance_score, g.consistency_score],
+    color: '#6366f1', max: 100
+  });
+
+  // ── Metrics bar chart
+  renderBarChart('chart-metrics', {
+    labels: ['DPD','EOD','EQO','CAL','Overall Bias'],
+    values: [m.demographic_parity_diff,m.equal_opportunity_diff,m.equalized_odds_diff,m.calibration_diff,m.overall_bias_score],
+    color: '#ef4444', max: 1
+  });
+
+  // ── Violations
+  const vl = document.getElementById('violations-list');
+  if (!data.violations || data.violations.length === 0) {
+    vl.innerHTML = '<div class="alert alert-success">✓ All checked policies are passing!</div>';
+  } else {
+    vl.innerHTML = data.violations.map(v => `
+      <div class="violation-row">
+        <div style="flex-shrink:0;margin-top:2px">❌</div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--red)">${v.id} — ${v.name}</div>
+          <div style="font-size:10px;color:var(--text3);margin-top:2px">${v.description}</div>
+          <div style="font-size:10px;color:var(--text2);margin-top:4px">
+            <span class="badge badge-${v.severity}">${v.severity}</span>
+            &nbsp; Value: <code>${v.current_value}</code> &nbsp; Threshold: <code>${v.operator==='less_than'?'<':'>'} ${v.threshold}</code>
+          </div>
+        </div>
+      </div>`).join('');
   }
 
-  // Dot click navigation
-  dots.forEach(dot => {
-    dot.addEventListener('click', () => {
-      goToSlide(parseInt(dot.dataset.slide));
+  // ── Gemini narrative
+  document.getElementById('gemini-narrative').textContent = data.gemini_narrative || '—';
+
+  // ── Bias injected
+  const bi = data.bias_injected;
+  document.getElementById('bias-info').innerHTML = `
+    <span class="badge badge-warn">${bi.bias_type || '—'}</span>
+    &nbsp;Severity: <strong>${bi.severity || '—'}</strong>
+    &nbsp;Affected rows: <strong>${bi.affected_rows || 0}</strong>
+    ${bi.proxy_feature ? `&nbsp;Proxy: <strong>${bi.proxy_feature}</strong>` : ''}`;
+}
+
+// ── CHART HELPERS ────────────────────────────────────────────
+function destroyChart(id) { if (state.charts[id]) { state.charts[id].destroy(); delete state.charts[id]; } }
+
+function renderBarChart(id, {labels, values, color, max=1}) {
+  destroyChart(id);
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  state.charts[id] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values, backgroundColor: color + '33', borderColor: color,
+        borderWidth: 1.5, borderRadius: 4, hoverBackgroundColor: color + '55'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, animation: {duration: 600},
+      plugins: {legend:{display:false}, tooltip:{
+        callbacks:{label: c => ` ${c.parsed.y.toFixed(3)}`}
+      }},
+      scales: {
+        x: {grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#475569',font:{size:9}}},
+        y: {grid:{color:'rgba(255,255,255,.04)'}, ticks:{color:'#475569',font:{size:9}}, max, min:0}
+      }
+    }
+  });
+}
+
+// ── HEATMAP TAB ───────────────────────────────────────────────
+async function loadHeatmap() {
+  if (!state.runId) return;
+  try {
+    const res  = await fetch(`${API}/api/heatmap/${state.runId}`);
+    const data = await res.json();
+    renderHeatmap(data.heatmap_data || []);
+  } catch(e) { toast('Heatmap error: ' + e.message, 'error'); }
+}
+
+function renderHeatmap(groups) {
+  if (!groups || groups.length === 0) return;
+  document.getElementById('heatmap-empty').style.display   = 'none';
+  document.getElementById('heatmap-content').style.display = 'block';
+
+  const rates = groups.map(g => g.accept_rate);
+  const mean  = rates.reduce((a,b)=>a+b,0) / rates.length;
+
+  // ── Heatmap grid (groups as rows, metrics as cols)
+  const cols  = ['accept_rate','tpr','fpr','calibration_error'];
+  const colLbl= ['Accept Rate','TPR','FPR','Cal. Err'];
+  const grid  = document.getElementById('hmap-grid');
+  const hdr   = document.getElementById('hmap-header');
+
+  hdr.style.gridTemplateColumns = `120px repeat(${cols.length},1fr)`;
+  hdr.innerHTML = `<div style="font-size:9px;color:var(--text3);text-transform:uppercase">Group</div>` +
+    colLbl.map(l=>`<div style="font-size:9px;color:var(--text3);text-transform:uppercase;text-align:center">${l}</div>`).join('');
+
+  grid.style.gridTemplateColumns = `120px repeat(${cols.length},1fr)`;
+  grid.innerHTML = '';
+
+  groups.forEach(g => {
+    grid.innerHTML += `<div style="font-size:10px;color:var(--text2);display:flex;align-items:center;padding:0 4px">${g.group_label}</div>`;
+    cols.forEach((c, i) => {
+      const v   = g[c];
+      const pct = i === 2 ? v : (c==='calibration_error' ? v : v);
+      let bg, fg;
+      if (c === 'accept_rate') { bg = v>0.7?'rgba(16,185,129,.25)':v>0.5?'rgba(245,158,11,.25)':'rgba(239,68,68,.25)'; fg = v>0.7?'#34d399':v>0.5?'#fbbf24':'#f87171'; }
+      else if (c === 'tpr')    { bg = v>0.7?'rgba(16,185,129,.25)':v>0.5?'rgba(245,158,11,.25)':'rgba(239,68,68,.25)'; fg = v>0.7?'#34d399':v>0.5?'#fbbf24':'#f87171'; }
+      else if (c === 'fpr')    { bg = v<0.2?'rgba(16,185,129,.25)':v<0.4?'rgba(245,158,11,.25)':'rgba(239,68,68,.25)'; fg = v<0.2?'#34d399':v<0.4?'#fbbf24':'#f87171'; }
+      else                     { bg = v<0.1?'rgba(16,185,129,.25)':v<0.2?'rgba(245,158,11,.25)':'rgba(239,68,68,.25)'; fg = v<0.1?'#34d399':v<0.2?'#fbbf24':'#f87171'; }
+      grid.innerHTML += `<div class="hmap-cell" style="background:${bg};color:${fg}">${v.toFixed(3)}</div>`;
     });
   });
 
-  // Keyboard navigation
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown' || e.key === 'PageDown') {
-      e.preventDefault();
-      goToSlide(currentSlide + 1);
-    } else if (e.key === 'ArrowUp' || e.key === 'PageUp') {
-      e.preventDefault();
-      goToSlide(currentSlide - 1);
-    } else if (e.key === 'f' || e.key === 'F') {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen();
+  // ── Bar charts
+  destroyChart('chart-heatmap-bar');
+  const ctx = document.getElementById('chart-heatmap-bar');
+  state.charts['chart-heatmap-bar'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: groups.map(g => g.group_label),
+      datasets:[{
+        label:'Accept Rate', data: rates,
+        backgroundColor: rates.map(r => r>0.7?'rgba(16,185,129,.4)':r>0.5?'rgba(245,158,11,.4)':'rgba(239,68,68,.4)'),
+        borderColor:     rates.map(r => r>0.7?'#10b981':r>0.5?'#f59e0b':'#ef4444'),
+        borderWidth:1.5, borderRadius:4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:{duration:600},
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#475569',font:{size:8},maxRotation:45}, grid:{color:'rgba(255,255,255,.04)'}},
+        y:{min:0,max:1,ticks:{color:'#475569',font:{size:9}}, grid:{color:'rgba(255,255,255,.04)'}}
       }
     }
   });
 
-  // Intersection Observer for active dot + animations
-  const observerOptions = { threshold: 0.5 };
-  const slideObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const index = Array.from(slides).indexOf(entry.target);
-        currentSlide = index;
-
-        dots.forEach((dot, i) => {
-          dot.classList.toggle('active', i === index);
-        });
-
-        // Hide key hint after first scroll
-        if (index > 0) {
-          document.getElementById('keyHint').style.opacity = '0';
-          setTimeout(() => {
-            document.getElementById('keyHint').style.display = 'none';
-          }, 500);
-        }
+  destroyChart('chart-tpr-fpr');
+  const ctx2 = document.getElementById('chart-tpr-fpr');
+  state.charts['chart-tpr-fpr'] = new Chart(ctx2, {
+    type:'bar',
+    data:{
+      labels: groups.map(g => g.group_label),
+      datasets:[
+        {label:'TPR', data: groups.map(g=>g.tpr), backgroundColor:'rgba(16,185,129,.3)', borderColor:'#10b981', borderWidth:1.5, borderRadius:3},
+        {label:'FPR', data: groups.map(g=>g.fpr), backgroundColor:'rgba(239,68,68,.3)',   borderColor:'#ef4444', borderWidth:1.5, borderRadius:3}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:{duration:600},
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}},
+      scales:{
+        x:{ticks:{color:'#475569',font:{size:8},maxRotation:45}, grid:{color:'rgba(255,255,255,.04)'}},
+        y:{min:0,max:1,ticks:{color:'#475569',font:{size:9}}, grid:{color:'rgba(255,255,255,.04)'}}
       }
+    }
+  });
+}
+
+// ── TRAINING TAB ──────────────────────────────────────────────
+let rewardChart = null, biasTrainChart = null, beforeAfterChart = null;
+
+async function startTraining() {
+  if (!state.runId) { toast('Run an audit first', 'warn'); return; }
+  const btn = document.getElementById('train-btn');
+  btn.disabled = true; btn.textContent = '⏳ Training...';
+
+  const episodes = parseInt(document.getElementById('train-episodes').value) || 50;
+  try {
+    const res  = await fetch(`${API}/api/train`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({episodes, run_id: state.runId})
     });
-  }, observerOptions);
+    const data = await res.json();
+    if (!data.success && !data.message?.includes('already')) { toast(data.message,'warn'); btn.disabled=false; btn.textContent='▶ Start PPO Training'; return; }
+    toast(`Training started — ${episodes} episodes`, 'success');
 
-  slides.forEach(slide => slideObserver.observe(slide));
+    document.getElementById('training-log').textContent = '';
+    clearInterval(state.trainingInterval);
+    state.trainingInterval = setInterval(pollTraining, 800);
+    document.getElementById('train-progress-card').style.display = 'block';
+    initTrainingCharts();
+  } catch(e) {
+    toast('Training error: ' + e.message, 'error');
+    btn.disabled = false; btn.textContent = '▶ Start PPO Training';
+  }
+}
 
-  // Animate on scroll observer
-  const animObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
-  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+function resetTraining() {
+  clearInterval(state.trainingInterval);
+  document.getElementById('ep-counter').textContent     = '—';
+  document.getElementById('reward-counter').textContent = '—';
+  document.getElementById('bias-counter').textContent   = '—';
+  document.getElementById('train-progress-fill').style.width = '0%';
+  document.getElementById('train-progress-text').textContent = '0 / 0';
+  document.getElementById('training-log').textContent = 'Reset.\n';
+  document.getElementById('train-btn').disabled = false;
+  document.getElementById('train-btn').textContent = '▶ Start PPO Training';
+  if (state.charts['chart-reward']) { state.charts['chart-reward'].data.datasets[0].data=[]; state.charts['chart-reward'].update(); }
+  if (state.charts['chart-bias-train']) { state.charts['chart-bias-train'].data.datasets[0].data=[]; state.charts['chart-bias-train'].update(); }
+}
 
-  document.querySelectorAll('.animate-on-scroll').forEach(el => {
-    animObserver.observe(el);
+async function pollTraining() {
+  try {
+    const res  = await fetch(`${API}/api/train/status`);
+    const data = await res.json();
+    const {current_ep, total_ep, reward_history, bias_history, logs, active} = data;
+
+    document.getElementById('ep-counter').textContent     = `${current_ep}/${total_ep}`;
+    document.getElementById('reward-counter').textContent = reward_history.length ? reward_history.slice(-1)[0].toFixed(3) : '—';
+    document.getElementById('bias-counter').textContent   = bias_history.length   ? bias_history.slice(-1)[0].toFixed(3)   : '—';
+    const pct = total_ep ? (current_ep/total_ep*100) : 0;
+    document.getElementById('train-progress-fill').style.width = pct + '%';
+    document.getElementById('train-progress-text').textContent = `${current_ep} / ${total_ep}`;
+
+    if (logs && logs.length) {
+      const logEl = document.getElementById('training-log');
+      logEl.textContent = logs.slice(-60).join('\n') + '\n';
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    // Update charts
+    if (state.charts['chart-reward']) {
+      state.charts['chart-reward'].data.labels   = reward_history.map((_,i)=>i+1);
+      state.charts['chart-reward'].data.datasets[0].data = reward_history;
+      state.charts['chart-reward'].update('none');
+    }
+    if (state.charts['chart-bias-train']) {
+      state.charts['chart-bias-train'].data.labels   = bias_history.map((_,i)=>i+1);
+      state.charts['chart-bias-train'].data.datasets[0].data = bias_history;
+      state.charts['chart-bias-train'].update('none');
+    }
+
+    if (!active && current_ep === total_ep && total_ep > 0) {
+      clearInterval(state.trainingInterval);
+      document.getElementById('train-btn').disabled = false;
+      document.getElementById('train-btn').textContent = '▶ Start PPO Training';
+      renderBeforeAfter(data);
+      toast('Training complete! 🎉', 'success');
+    }
+  } catch(e) { /* ignore poll errors */ }
+}
+
+function initTrainingCharts() {
+  destroyChart('chart-reward');
+  const c1 = document.getElementById('chart-reward');
+  state.charts['chart-reward'] = new Chart(c1, {
+    type:'line', data:{labels:[],datasets:[{data:[],borderColor:'#10b981',backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#475569',font:{size:8}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{min:0,max:1,ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}}}
   });
 
-  // Auto-hide key hint
-  setTimeout(() => {
-    const hint = document.getElementById('keyHint');
-    if (hint.style.opacity !== '0') {
-      hint.style.opacity = '0.4';
-    }
-  }, 5000);
+  destroyChart('chart-bias-train');
+  const c2 = document.getElementById('chart-bias-train');
+  state.charts['chart-bias-train'] = new Chart(c2, {
+    type:'line', data:{labels:[],datasets:[{data:[],borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,.08)',fill:true,tension:.4,pointRadius:0,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:0},plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:'#475569',font:{size:8}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{min:0,max:1,ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+}
+
+function renderBeforeAfter(data) {
+  const bb = data.bias_before || 0.7;
+  const ba = data.bias_after  || 0.2;
+  destroyChart('chart-before-after');
+  const ctx = document.getElementById('chart-before-after');
+  state.charts['chart-before-after'] = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels:['DPD','EOD','Disparate Impact','Overall Bias'],
+      datasets:[
+        {label:'Before', data:[bb*0.6, bb*0.5, 1-bb*0.7, bb], backgroundColor:'rgba(239,68,68,.3)', borderColor:'#ef4444', borderWidth:1.5, borderRadius:4},
+        {label:'After',  data:[ba*0.6, ba*0.5, 1-ba*0.7, ba], backgroundColor:'rgba(16,185,129,.3)', borderColor:'#10b981', borderWidth:1.5, borderRadius:4}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:700},
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}},
+      scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{min:0,max:1,ticks:{color:'#475569',font:{size:9}},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+}
+
+// ── POLICIES TAB ──────────────────────────────────────────────
+let allPolicies = [];
+
+async function loadPolicies() {
+  if (!state.runId) return;
+  try {
+    const res  = await fetch(`${API}/api/policies/${state.runId}`);
+    const data = await res.json();
+    allPolicies = data.policies || [];
+    filterPolicies();
+    const fails = allPolicies.filter(p=>!p.passed).length;
+    const pb = document.getElementById('policy-badge');
+    pb.textContent = fails; pb.style.display = fails > 0 ? 'inline' : 'none';
+    document.getElementById('policy-summary').textContent =
+      `${allPolicies.filter(p=>p.passed).length} pass / ${fails} fail`;
+  } catch(e) { toast('Policy load error','error'); }
+}
+
+function filterPolicies() {
+  const domainF = document.getElementById('policy-filter-domain').value;
+  const statusF = document.getElementById('policy-filter-status').value;
+  let filtered  = allPolicies;
+  if (domainF !== 'all') filtered = filtered.filter(p => p.domain === domainF || p.domain === 'all');
+  if (statusF === 'fail') filtered = filtered.filter(p => !p.passed);
+  if (statusF === 'pass') filtered = filtered.filter(p =>  p.passed);
+  renderPolicies(filtered);
+}
+
+function renderPolicies(policies) {
+  const tbody = document.getElementById('policies-tbody');
+  if (!policies.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text3)">No policies match filter</td></tr>';
+    return;
+  }
+  tbody.innerHTML = policies.map(p => `
+    <tr>
+      <td><code style="color:var(--indigo);font-size:10px">${p.id}</code></td>
+      <td>
+        <div style="font-size:11px;color:var(--text)">${p.name}</div>
+        ${p.legal_reference ? `<div style="font-size:9px;color:var(--text3)">${p.legal_reference}</div>` : ''}
+      </td>
+      <td><span class="badge badge-info" style="font-size:9px">${p.domain}</span></td>
+      <td><span class="badge badge-${p.severity}">${p.severity}</span></td>
+      <td style="font-family:'JetBrains Mono',monospace">${p.current_value.toFixed(4)}</td>
+      <td style="font-family:'JetBrains Mono',monospace">${p.operator === 'less_than' ? '< ' : '> '}${p.threshold}</td>
+      <td><span class="badge badge-${p.passed?'pass':'fail'}">${p.passed?'✓ PASS':'✗ FAIL'}</span></td>
+    </tr>`).join('');
+}
+
+// ── REPORT TAB ────────────────────────────────────────────────
+async function loadReport() {
+  if (!state.runId) return;
+  try {
+    const res  = await fetch(`${API}/api/report/${state.runId}`);
+    const data = await res.json();
+    document.getElementById('report-empty').style.display   = 'none';
+    document.getElementById('report-content').style.display = 'block';
+
+    const gradeColors = {A:'#10b981', B:'#a3e635', C:'#f59e0b', D:'#f97316', F:'#ef4444'};
+    const g   = data.grade;
+    const gc  = document.getElementById('grade-circle');
+    gc.textContent = g;
+    gc.style.color       = gradeColors[g] || '#94a3b8';
+    gc.style.borderColor = gradeColors[g] || '#94a3b8';
+    gc.style.boxShadow   = `0 0 24px ${(gradeColors[g]||'#94a3b8')}33`;
+
+    document.getElementById('report-score').textContent  = data.final_score.toFixed(1) + '/100';
+    document.getElementById('report-verdict').innerHTML  = `<span class="badge badge-${data.passed?'pass':'fail'}">${data.passed?'✓ PASSED':'✗ NEEDS WORK'}</span> &nbsp; ${data.domain} domain`;
+
+    // Score bars
+    const gb = data.grader_breakdown;
+    const bars = [
+      {l:'Bias Detection',    v:gb.bias_detection_score,    c:'#6366f1'},
+      {l:'Mitigation Score',  v:gb.mitigation_score,       c:'#8b5cf6'},
+      {l:'Explanation Quality',v:gb.explanation_quality,    c:'#06b6d4'},
+      {l:'Efficiency',         v:gb.efficiency_score,       c:'#10b981'},
+      {l:'Policy Compliance',  v:gb.policy_compliance_score,c:'#f59e0b'},
+      {l:'Consistency',        v:gb.consistency_score,      c:'#f97316'},
+    ];
+    document.getElementById('report-score-bars').innerHTML = bars.map(b => `
+      <div class="score-bar-row">
+        <div class="score-bar-label">${b.l}</div>
+        <div class="score-bar-track"><div class="score-bar-fill" style="width:${b.v}%;background:${b.c}"></div></div>
+        <div class="score-bar-val">${b.v.toFixed(0)}</div>
+      </div>`).join('');
+
+    // Radar chart
+    destroyChart('chart-radar');
+    const ctx = document.getElementById('chart-radar');
+    state.charts['chart-radar'] = new Chart(ctx, {
+      type:'radar',
+      data:{
+        labels:bars.map(b=>b.l),
+        datasets:[{data:bars.map(b=>b.v), backgroundColor:'rgba(99,102,241,.15)',
+          borderColor:'#6366f1', borderWidth:2, pointBackgroundColor:'#6366f1', pointRadius:3}]
+      },
+      options:{responsive:true,maintainAspectRatio:false,animation:{duration:700},
+        plugins:{legend:{display:false}},
+        scales:{r:{min:0,max:100,ticks:{color:'#475569',font:{size:9},stepSize:25},
+          grid:{color:'rgba(255,255,255,.06)'},angleLines:{color:'rgba(255,255,255,.04)'},
+          pointLabels:{color:'#94a3b8',font:{size:9}}}}}
+    });
+
+    document.getElementById('report-narrative').textContent  = data.gemini_narrative || '—';
+
+    // Print area
+    document.getElementById('print-meta').textContent =
+      `Domain: ${data.domain}  |  Run: ${data.run_id}  |  Date: ${new Date().toLocaleDateString()}`;
+    document.getElementById('print-grade-text').textContent =
+      `Grade: ${g}  —  Score: ${data.final_score.toFixed(1)}/100  |  ${data.passed?'PASSED':'NEEDS WORK'}`;
+    document.getElementById('print-narrative').textContent   = data.gemini_narrative || '';
+  } catch(e) { toast('Report error: ' + e.message, 'error'); }
+}
+
+function exportPDF() {
+  document.getElementById('print-area').style.display = 'block';
+  window.print();
+  document.getElementById('print-area').style.display = 'none';
+  toast('PDF dialog opened', 'success');
+}
+
+// ── MITIGATE TAB ──────────────────────────────────────────────
+function loadMitigate() {
+  if (!state.runId || !state.auditData) return;
+  document.getElementById('mitigate-empty').style.display  = 'none';
+  document.getElementById('mitigate-content').style.display = 'block';
+
+  const sugg = state.suggestions || [];
+  const strategyColors = {1:'var(--red)', 2:'var(--amber)', 3:'var(--cyan)'};
+  document.getElementById('suggestions-list').innerHTML = sugg.length ? sugg.map((s,i) => `
+    <div class="mitigation-card" onclick="document.getElementById('strategy-select').value='${s.strategy?.toLowerCase().replace(/ /g,'_').replace(/\(/g,'').replace(/\)/g,'') || 'reweighting'}'">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="color:${strategyColors[s.priority]||'var(--text2)'};font-size:11px;font-weight:700">P${s.priority}</span>
+        <span style="font-size:12px;font-weight:600;color:var(--text)">${s.strategy}</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:6px">${s.description}</div>
+      <div style="font-size:10px;color:var(--emerald)">📈 ${s.expected_improvement}</div>
+    </div>`).join('')
+    : '<div style="color:var(--text3);font-size:12px">No suggestions — model is fair!</div>';
+}
+
+async function applyMitigation() {
+  if (!state.runId) { toast('Run an audit first','warn'); return; }
+  const btn = document.getElementById('mitigate-btn');
+  btn.disabled = true; btn.textContent = '⏳ Applying...';
+  showLoading('Applying mitigation strategy...');
+  try {
+    const strategy = document.getElementById('strategy-select').value;
+    const strength = parseFloat(document.getElementById('strength-slider').value);
+    const res = await fetch(`${API}/api/mitigate`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({run_id: state.runId, strategy, strength})
+    });
+    const data = await res.json();
+    renderMitigationResults(data);
+    toast(`Mitigation applied! Projected improvement: ${data.projected_improvement}`, 'success');
+  } catch(e) { toast('Mitigation error: '+e.message,'error'); }
+  finally { hideLoading(); btn.disabled=false; btn.textContent='⚡ Apply Mitigation'; }
+}
+
+function renderMitigationResults(data) {
+  document.getElementById('mitigation-results').style.display      = 'block';
+  document.getElementById('mitigation-metrics-card').style.display = 'block';
+  const mb = data.metrics_before, ma = data.metrics_after;
+  const metrics = ['demographic_parity_diff','equal_opportunity_diff','disparate_impact_ratio','equalized_odds_diff','overall_bias_score'];
+  const labels  = ['DPD','EOD','DI Ratio','EQO','Bias Score'];
+
+  destroyChart('chart-mitigate');
+  const ctx = document.getElementById('chart-mitigate');
+  state.charts['chart-mitigate'] = new Chart(ctx, {
+    type:'bar',
+    data:{labels,datasets:[
+      {label:'Before',data:metrics.map(m=>Math.abs(mb[m]||0)),backgroundColor:'rgba(239,68,68,.3)',borderColor:'#ef4444',borderWidth:1.5,borderRadius:4},
+      {label:'After', data:metrics.map(m=>Math.abs(ma[m]||0)),backgroundColor:'rgba(16,185,129,.3)',borderColor:'#10b981',borderWidth:1.5,borderRadius:4}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:700},
+      plugins:{legend:{labels:{color:'#94a3b8'}}},
+      scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},
+              y:{min:0,max:1,ticks:{color:'#475569'},grid:{color:'rgba(255,255,255,.04)'}}}}
+  });
+
+  const rows = metrics.map((m,i) => {
+    const before = (mb[m]||0).toFixed(4), after = (ma[m]||0).toFixed(4);
+    const delta  = (parseFloat(after) - parseFloat(before));
+    const isGood = m === 'disparate_impact_ratio' ? delta > 0 : delta < 0;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:11px">
+      <span style="color:var(--text2)">${labels[i]}</span>
+      <span style="font-family:'JetBrains Mono',monospace;color:var(--text3)">${before}</span>
+      <span style="font-size:14px;color:var(--text3)">→</span>
+      <span style="font-family:'JetBrains Mono',monospace;color:${isGood?'var(--emerald)':'var(--red)'}">${after}</span>
+      <span class="badge badge-${isGood?'pass':'fail'}">${delta>0?'+':''}${delta.toFixed(4)}</span>
+    </div>`;
+  });
+  document.getElementById('mitigation-metrics-table').innerHTML = rows.join('');
+}
+
+// ── WHAT-IF TAB ───────────────────────────────────────────────
+async function runCounterfactual() {
+  const genderVal = document.getElementById('wi-gender').value;
+  const raceVal   = document.getElementById('wi-race').value;
+  const age       = document.getElementById('wi-age').value;
+  const income    = document.getElementById('wi-income').value;
+  const cfAttr    = document.getElementById('wi-cf-attr').value;
+
+  const cfValueMap = {gender: genderVal==='0'?'1':'0', race: raceVal==='0'?'1':'0', age: '65'};
+  const cfValue    = cfValueMap[cfAttr] || '1';
+  showLoading('Running counterfactual analysis...');
+  try {
+    const res  = await fetch(`${API}/api/counterfactual`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        individual: {gender:genderVal,race:raceVal,age,income},
+        sensitive_attr: cfAttr, counterfactual_value: cfValue,
+        run_id: state.runId || ''
+      })
+    });
+    const data = await res.json();
+    renderCounterfactual(data);
+    toast('Counterfactual analysis complete', 'success');
+  } catch(e) { toast('Error: '+e.message,'error'); }
+  finally { hideLoading(); }
+}
+
+function renderCounterfactual(data) {
+  document.getElementById('decision-card').style.display = 'block';
+  const orig = data.original, cf = data.counterfactual;
+
+  const dchip = (d,p) =>
+    `<div class="decision-chip" style="background:${d==='APPROVED'?'rgba(16,185,129,.15)':'rgba(239,68,68,.15)'};color:${d==='APPROVED'?'var(--emerald)':'var(--red)'};border:1px solid ${d==='APPROVED'?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'}">
+      ${d==='APPROVED'?'✓':'✗'} ${d} <span style="font-size:10px;opacity:.7">${(p*100).toFixed(0)}%</span>
+    </div>`;
+
+  document.getElementById('decision-original').outerHTML = dchip(orig.decision, orig.probability);
+  document.getElementById('decision-cf').outerHTML       = dchip(cf.decision, cf.probability);
+  document.getElementById('prob-original').textContent   = `${(orig.probability*100).toFixed(1)}% confidence`;
+  document.getElementById('prob-cf').textContent         = `${(cf.probability*100).toFixed(1)}% confidence`;
+
+  const flipEl = document.getElementById('flip-indicator');
+  if (data.flip_detected) {
+    flipEl.innerHTML = `<div style="color:var(--red);font-size:11px;font-weight:600">⚠ Decision Flipped!</div><div style="font-size:10px;color:var(--text3)">Δ ${(data.probability_delta*100).toFixed(1)}%</div>`;
+  } else {
+    flipEl.innerHTML = `<div style="color:var(--emerald);font-size:11px;font-weight:600">✓ Consistent</div><div style="font-size:10px;color:var(--text3)">Δ ${(data.probability_delta*100).toFixed(1)}%</div>`;
+  }
+
+  // Refresh decision chip refs after outerHTML replacement
+  document.getElementById('decision-card').querySelectorAll('.decision-chip').forEach((el,i) => el.id = i===0?'decision-original':'decision-cf');
+
+  // Group grid
+  const grid = document.getElementById('group-grid');
+  grid.innerHTML = (data.group_results || []).map(g => `
+    <div class="group-card">
+      <div style="font-size:9px;color:var(--text3);margin-bottom:4px">${g.gender} × ${g.race}</div>
+      <div style="font-size:11px;font-weight:600;color:${g.decision==='APPROVED'?'var(--emerald)':'var(--red)'}">${g.decision==='APPROVED'?'✓':'✗'}</div>
+      <div style="font-size:9px;font-family:'JetBrains Mono',monospace;color:var(--text3);margin-top:2px">${(g.probability*100).toFixed(0)}%</div>
+    </div>`).join('');
+
+  document.getElementById('cf-explanation').textContent = data.explanation || '—';
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+// Initialize empty training charts on load
+window.addEventListener('load', () => {
+  initTrainingCharts();
+});
 </script>
 </body>
 </html>
