@@ -1,0 +1,146 @@
+# =========================
+
+# Python
+
+# =========================
+
+**pycache**/
+*.py[cod]
+*$py.class
+
+# Compiled files
+
+*.so
+
+# Distribution / packaging
+
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# =========================
+
+# Virtual Environment
+
+# =========================
+
+venv/
+.env/
+.env.*
+
+# =========================
+
+# IDE / Editor
+
+# =========================
+
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+
+# OS Files
+
+# =========================
+
+.DS_Store
+Thumbs.db
+
+# =========================
+
+# Logs
+
+# =========================
+
+*.log
+
+# =========================
+
+# Environment Variables
+
+# =========================
+
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =========================
+
+# FastAPI / Uvicorn
+
+# =========================
+
+*.pid
+*.pid.lock
+
+# =========================
+
+# Data Files (IMPORTANT)
+
+# =========================
+
+# Ignore large datasets
+
+*.csv
+*.xlsx
+*.parquet
+
+# But KEEP your sample JSONs
+
+!backend/data/tasks/*.json
+
+# =========================
+
+# ML / Models
+
+# =========================
+
+models/
+*.pkl
+*.joblib
+*.h5
+
+# =========================
+
+# Testing / Coverage
+
+# =========================
+
+.coverage
+htmlcov/
+.pytest_cache/
+
+# =========================
+
+# Node (if you upgrade frontend later)
+
+# =========================
+
+node_modules/
+.next/
+out/
+
+# =========================
+
+# Misc
+
+# =========================
+
+*.sqlite3
+*.db
