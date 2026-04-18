@@ -1572,6 +1572,7 @@ function renderCounterfactual(data) {
   document.getElementById('decision-card').style.display = 'block';
   const orig = data.original, cf = data.counterfactual;
 
+
   const dchip = (d,p) =>
     `<div class="decision-chip" style="background:${d==='APPROVED'?'rgba(16,185,129,.15)':'rgba(239,68,68,.15)'};color:${d==='APPROVED'?'var(--emerald)':'var(--red)'};border:1px solid ${d==='APPROVED'?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'}">
       ${d==='APPROVED'?'✓':'✗'} ${d} <span style="font-size:10px;opacity:.7">${(p*100).toFixed(0)}%</span>
